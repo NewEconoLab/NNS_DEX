@@ -18,8 +18,8 @@ namespace NNS_DEX
         [Appcall("348387116c4a75e420663277d9c02049907128c7")]
         static extern object centerCall(string method, object[] arr);
 
-        // cgas合约地址
-        // cgas转账
+        // NNC合约地址
+        // NNC转账
         [Appcall("fc732edee1efdf968c23c20a9628eaa5a6ccb934")]
         static extern object nncCall(string method, object[] arr);
 
@@ -53,6 +53,7 @@ namespace NNS_DEX
         //存储区前缀
         //balanceMap key=addr 地址合约内账户余额
         //fixedSellingInfoMap key=namehash  出售信息
+        //txidVerifiedMap key=txid setmoneyin的txid是否被用于增加钱过
 
 
         public class OwnerInfo
@@ -98,8 +99,8 @@ namespace NNS_DEX
 
         static TransferInfo getTxIn(byte[] txid)
         {
-            var keytx = new byte[] { 0x12 }.Concat(txid);
-            var v = Storage.Get(Storage.CurrentContext, keytx).AsBigInteger();
+            StorageMap txidVerifiedMap = Storage.CurrentContext.CreateMap("txidVerifiedMap");
+            var v = txidVerifiedMap.Get(txid).AsBigInteger();
             if (v == 0)//如果這個交易已經處理過,就當get不到
             {
                 object[] _p = new object[1];
@@ -295,24 +296,26 @@ namespace NNS_DEX
 
         public static bool SetMoneyIn(byte[] txid)
         {
+            StorageMap txidVerifiedMap = Storage.CurrentContext.CreateMap("txidVerifiedMap");
+            StorageMap balanceMap = Storage.CurrentContext.CreateMap("balanceMap");
+
             var tx = getTxIn(txid);
             if (tx.from.Length == 0)
                 return false;
 
             if (tx.to.AsBigInteger() == ExecutionEngine.ExecutingScriptHash.AsBigInteger())
             {
-                var keytx = new byte[] { 0x12 }.Concat(txid);
-                var n = Storage.Get(Storage.CurrentContext, keytx).AsBigInteger();
+                var n = txidVerifiedMap.Get(txid).AsBigInteger();
                 if (n == 1)//这笔txid已经被用掉了
                     return false;
                 //存錢
-                var key = new byte[] { 0x11 }.Concat(tx.from);
-                var money = Storage.Get(Storage.CurrentContext, key).AsBigInteger();
+                var money = balanceMap.Get(tx.from).AsBigInteger();
                 money += tx.value;
-                Storage.Put(Storage.CurrentContext, key, money);
+                balanceMap.Put(tx.from, money);
+
                 onSetMoneyIn(tx.from, tx.value, txid);
                 //記錄這個txid處理過了,只處理一次
-                Storage.Put(Storage.CurrentContext, keytx, 1);
+                txidVerifiedMap.Put(txid, 1);
                 return true;
             }
             return false;
@@ -320,6 +323,8 @@ namespace NNS_DEX
 
         public static bool GetMoneyBack(byte[] who, BigInteger amount)
         {
+            StorageMap balanceMap = Storage.CurrentContext.CreateMap("balanceMap");
+
             if (!Runtime.CheckWitness(who) && !Runtime.CheckWitness(superAdmin))
                 return false;
             //多判断总比少判断好
@@ -327,8 +332,8 @@ namespace NNS_DEX
                 return false;
             if (who.Length != 20)
                 return false;
-            var key = new byte[] { 0x11 }.Concat(who);
-            var money = Storage.Get(Storage.CurrentContext, key).AsBigInteger();
+
+            var money = balanceMap.Get(who).AsBigInteger();
             if (money < amount)
                 return false;
 
@@ -342,7 +347,8 @@ namespace NNS_DEX
             if (succ)
             {
                 money -= amount;
-                Storage.Put(Storage.CurrentContext, key, money);
+                balanceMap.Put(who, money);
+
                 onGetMoneyBack(who, amount);
                 return true;
             }
