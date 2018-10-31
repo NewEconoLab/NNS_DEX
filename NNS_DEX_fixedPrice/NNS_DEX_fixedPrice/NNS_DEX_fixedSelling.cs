@@ -185,8 +185,8 @@ namespace NNS_DEX
             //售价必须大于0
             if (price <= 0) return false;
 
-            //合约限制最小价格为0.1 并且小数点后面不能超过一位
-            if (price < 10000000 || price % 10000000 > 0)
+            //合约限制最小价格为0.1 并且小数点后面不能超过一位（按照精度2换算）
+            if (price < 10 || price % 10 > 0)
                 return false;
 
             byte[] fullhash = getFullNamehashForArray(domainArray);
@@ -222,9 +222,9 @@ namespace NNS_DEX
             fixedSellingInfo FSI = getfixedSellingInfoByFullhash(fullHash);
 
             //无出售信息不能下架
-            if (FSI == new fixedSellingInfo()) return false;
-            //非出售者不可以下架
-            if (!Runtime.CheckWitness(FSI.seller)) return false;
+            if (FSI.fullHash.Length == 0) return false;
+            //非出售者或超级管理员不可以下架
+            if (!Runtime.CheckWitness(FSI.seller) && !Runtime.CheckWitness(superAdmin)) return false;
 
             //var price = FSI.price;
             //var seller = FSI.seller;
@@ -261,7 +261,7 @@ namespace NNS_DEX
             //获取出售信息
             fixedSellingInfo FSI = getfixedSellingInfoByFullhash(fullHash);
             //无出售信息不能买
-            if (FSI == new fixedSellingInfo()) return false;
+            if (FSI.fullHash.Length == 0) return false;
 
             var price = FSI.price;
             StorageMap balanceMap = Storage.CurrentContext.CreateMap("balanceMap");
@@ -353,7 +353,7 @@ namespace NNS_DEX
             transInput[1] = who;
             transInput[2] = amount;
 
-            bool result = (bool)nncCall("transfer", transInput);
+            bool result = (bool)nncCall("transfer_app", transInput);
             if (result)
             {
                 balance -= amount;
@@ -377,8 +377,10 @@ namespace NNS_DEX
 
         public static object Main(string method, object[] args)
         {
-            //任意鉴权请求都为否，UTXO转账都不允许
-            if (Runtime.Trigger == TriggerType.Verification)
+            string magic = "20181031";
+
+            //UTXO转账转入转出都不允许
+            if (Runtime.Trigger == TriggerType.Verification || Runtime.Trigger == TriggerType.VerificationR)
             {
                 return false;
             }
