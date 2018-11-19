@@ -82,7 +82,7 @@ namespace NNS_DEX
             public string fullDomain;
             public byte[] seller;         
             public BigInteger price;
-            public BigInteger TTL;
+            //public BigInteger TTL; 怕引起误会，认为TTL是不变的，应该统一从域名中心取
         }
 
         public static BigInteger GetBalanceOf(byte[] who)
@@ -146,7 +146,7 @@ namespace NNS_DEX
         }
 
         //存储一口价销售信息
-        private static void saveFixedSellingInfo(string[] domainArray, byte[] seller, BigInteger price, BigInteger TTL)
+        private static void saveFixedSellingInfo(string[] domainArray, byte[] seller, BigInteger price)
         {   
             byte[] namehash = getFullNamehashForArray(domainArray);
 
@@ -155,7 +155,7 @@ namespace NNS_DEX
             fixedSellingInfo.fullDomain = getFullStrForArray(domainArray);
             fixedSellingInfo.seller = seller;
             fixedSellingInfo.price = price;
-            fixedSellingInfo.TTL = TTL;
+            //fixedSellingInfo.TTL = TTL;
 
             StorageMap fixedSellingInfoMap = Storage.CurrentContext.CreateMap("fixedSellingInfoMap");
             fixedSellingInfoMap.Put(namehash, fixedSellingInfo.Serialize());
@@ -212,7 +212,7 @@ namespace NNS_DEX
                 return false;
 
             //存储上架信息，并通知
-            saveFixedSellingInfo(domainArray , seller, price, ownerInfo.TTL);
+            saveFixedSellingInfo(domainArray , seller, price);
         
             return true;
         }
