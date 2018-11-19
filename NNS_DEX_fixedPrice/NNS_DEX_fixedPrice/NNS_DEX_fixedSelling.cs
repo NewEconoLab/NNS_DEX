@@ -82,6 +82,7 @@ namespace NNS_DEX
             public string fullDomain;
             public byte[] seller;         
             public BigInteger price;
+            public BigInteger TTL;
         }
 
         public static BigInteger GetBalanceOf(byte[] who)
@@ -145,7 +146,7 @@ namespace NNS_DEX
         }
 
         //存储一口价销售信息
-        private static void saveFixedSellingInfo(string[] domainArray, byte[] seller, BigInteger price)
+        private static void saveFixedSellingInfo(string[] domainArray, byte[] seller, BigInteger price, BigInteger TTL)
         {   
             byte[] namehash = getFullNamehashForArray(domainArray);
 
@@ -154,6 +155,7 @@ namespace NNS_DEX
             fixedSellingInfo.fullDomain = getFullStrForArray(domainArray);
             fixedSellingInfo.seller = seller;
             fixedSellingInfo.price = price;
+            fixedSellingInfo.TTL = TTL;
 
             StorageMap fixedSellingInfoMap = Storage.CurrentContext.CreateMap("fixedSellingInfoMap");
             fixedSellingInfoMap.Put(namehash, fixedSellingInfo.Serialize());
@@ -210,7 +212,7 @@ namespace NNS_DEX
                 return false;
 
             //存储上架信息，并通知
-            saveFixedSellingInfo(domainArray , seller, price);
+            saveFixedSellingInfo(domainArray , seller, price, ownerInfo.TTL);
         
             return true;
         }
@@ -263,7 +265,12 @@ namespace NNS_DEX
             //无出售信息不能买
             if (FSI.fullHash.Length == 0) return false;
 
-            var price = FSI.price;
+            var seller = FSI.seller;
+            //不允许自己买自己的NNS
+            if (seller.AsBigInteger() == buyer.AsBigInteger()) return false;
+
+            var price = FSI.price;          
+
             StorageMap balanceMap = Storage.CurrentContext.CreateMap("balanceMap");
             var balanceOfBuyer = balanceMap.Get(buyer).AsBigInteger();
             
@@ -278,7 +285,7 @@ namespace NNS_DEX
             /*
              * 域名转让成功 开始算钱
              */
-            var seller = FSI.seller;
+            
             var balanceOfSeller = balanceMap.Get(seller).AsBigInteger();
 
             //给卖方增加钱
