@@ -11,8 +11,8 @@ namespace NNS_DEX
     //一口价卖出合约
     public class NNS_DEX_fixedSelling : SmartContract
     {
-        //初始管理員(测试专用)
-        static readonly byte[] superAdmin = Helper.ToScriptHash("AeaWf2v7MHGpzxH4TtBAu5kJRp5mRq2DQG");
+        //初始管理員
+        static readonly byte[] superAdmin = Helper.ToScriptHash("AMNFdmGuBrU1iaMbYd63L1zucYMdU9hvQU");
 
         //域名中心跳板合约地址
         [Appcall("348387116c4a75e420663277d9c02049907128c7")]
