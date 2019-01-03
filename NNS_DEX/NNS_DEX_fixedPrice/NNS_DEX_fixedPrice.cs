@@ -6,10 +6,10 @@ using System;
 using System.Numerics;
 using System.ComponentModel;
 
-namespace NNS_DEX
+namespace NNS_DEX_fixedPrice
 {
-    //NNS域名交易市场合约
-    public class NNS_DEX : SmartContract
+    //NNS域名交易市场V1.0 - 一口价出售合约
+    public class NNS_DEX_fixedPrice : SmartContract
     {
         //除了初始管理员，全动态配置
         //初始管理員,设置新的superAdminAddr后，无效
