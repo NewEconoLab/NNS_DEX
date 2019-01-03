@@ -8,8 +8,8 @@
     <ProjectGuid>{722ED56C-8D71-4093-A59E-2A2AF0B03446}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>NNS_DEX_fixedPrice</RootNamespace>
-    <AssemblyName>NNS_DEX_fixedPrice</AssemblyName>
+    <RootNamespace>NNS_DEX</RootNamespace>
+    <AssemblyName>NNS_DEX</AssemblyName>
     <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -45,7 +45,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="NNS_DEX_fixedSelling.cs" />
+    <Compile Include="NNS_DEX.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
