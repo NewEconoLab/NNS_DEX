@@ -560,6 +560,37 @@ namespace NNS_DEX_fixedPrice
             return false;
         }
 
+        public static bool TransferIn(byte[] from,BigInteger value,byte[] assetHash)
+        {
+            //验证from的权限
+            if (!Runtime.CheckWitness(from))
+                throw new Exception("param is wrong");
+            //明确to是本合约
+            byte[] to = ExecutionEngine.ExecutingScriptHash;
+
+            //获取转入资产的信息
+            deleDyncall dyncall = (deleDyncall)assetHash.ToDelegate();
+            object[] _p = new object[3];
+            _p[0] = from;
+            _p[1] = to;
+            _p[2] = value;
+            if (!(bool)dyncall("transfer", _p))//转账失败
+                throw new Exception("param is wrong");
+
+            StorageMap txidVerifiedMap = Storage.CurrentContext.CreateMap("txidVerifiedMap");
+            StorageMap balanceMap = Storage.CurrentContext.CreateMap("balanceMap");
+
+            //存錢
+            byte[] txid = (ExecutionEngine.ScriptContainer as Transaction).Hash;
+            var balance = balanceMap.Get(from.Concat(assetHash)).AsBigInteger();
+            balance += value;
+            balanceMap.Put(from.Concat(assetHash), balance);
+            onSetMoneyIn(from, assetHash, value, txid);
+            //記錄這個txid處理過了,只處理一次
+            txidVerifiedMap.Put(txid, 1);
+            return true;
+        }
+
         public static bool GetMoneyBack(byte[] who, byte[] assetHash, BigInteger amount)
         {
             StorageMap balanceMap = Storage.CurrentContext.CreateMap("balanceMap");
@@ -1014,6 +1045,10 @@ namespace NNS_DEX_fixedPrice
                 if (method == "setMoneyIn")
                 {
                     return SetMoneyIn((byte[])args[0], (byte[])args[1]);
+                }
+                if (method == "transferIn")
+                {
+                    return TransferIn((byte[])args[0], (BigInteger)args[1], (byte[])args[2]);
                 }
                 //提现
                 if (method == "getMoneyBack")
