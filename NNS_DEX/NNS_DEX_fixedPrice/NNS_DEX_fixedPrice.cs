@@ -169,7 +169,7 @@ namespace NNS_DEX_fixedPrice
             public byte[] assetHash;
             public BigInteger startPrice; //设置的起始价格
             public BigInteger endPrice; //最终价格
-            public BigInteger ratio;    //每轮降价的比例
+            public BigInteger salePrice;    //每轮降价的数额
 
         }
 
@@ -830,7 +830,7 @@ namespace NNS_DEX_fixedPrice
         /// <param name="endPrice"></param>
         /// <param name="ratio"></param>
         /// <returns></returns>
-        public static bool Auction(string[] domainArray, byte[] assetHash, BigInteger startPrice,BigInteger endPrice,int ratio = 660)
+        public static bool Auction(string[] domainArray, byte[] assetHash, BigInteger startPrice,BigInteger endPrice, BigInteger salePrice)
         {
             //不允许的资产不能定价
             assetSetting assetSetting = getAssetSetting(assetHash);
@@ -842,6 +842,9 @@ namespace NNS_DEX_fixedPrice
 
             //合约限制最小价格为0.1,并且小数点后面不能超过一位（按照精度2换算），NNC为10
             if (startPrice < assetSetting.valueMin || startPrice % assetSetting.valueUnit > 0|| endPrice < assetSetting.valueMin || endPrice % assetSetting.valueUnit > 0)
+                return false;
+            //限制每次降价的精度
+            if (salePrice < assetSetting.valueMin || salePrice % assetSetting.valueUnit > 0)
                 return false;
 
             //获取域名的fullhash
@@ -881,7 +884,7 @@ namespace NNS_DEX_fixedPrice
                 auctioner = auctioner ,
                 startPrice = startPrice,
                 endPrice = endPrice,
-                ratio = ratio,
+                salePrice = salePrice,
                 startTimeStamp = timeStamp,
                 assetHash = assetHash,
             };
@@ -935,7 +938,7 @@ namespace NNS_DEX_fixedPrice
             //48小时一轮 开拍为0阶段  48小时后为1阶段 48*2小时后为2阶段    48*60*60=172800
             var phase = timeStamp / 172800;
             //计算当前的价格
-            var currentPrice = auctionInfo.startPrice - auctionInfo.startPrice * auctionInfo.ratio * phase / fixedNumber;
+            var currentPrice = auctionInfo.startPrice - auctionInfo.salePrice* phase;
             if (currentPrice < auctionInfo.endPrice)
                 currentPrice = auctionInfo.endPrice;
             //对比下用户从前端获取到的价格
@@ -986,7 +989,7 @@ namespace NNS_DEX_fixedPrice
             //获取域名的拍卖情况
             StorageMap auctionInfoMap = Storage.CurrentContext.CreateMap("auctionInfoMap");
             var bytes = auctionInfoMap.Get(fullHash);
-            AuctionInfo auctionInfo = new AuctionInfo() { fullHash=new byte[] { } , assetHash= new byte[] { }, auctioner =new byte[] { }, endPrice=0, fullDomain="", ratio=0, startPrice=0, startTimeStamp=0 };
+            AuctionInfo auctionInfo = new AuctionInfo() { fullHash=new byte[] { } , assetHash= new byte[] { }, auctioner =new byte[] { }, endPrice=0, fullDomain="", salePrice = 0, startPrice=0, startTimeStamp=0 };
             if (bytes.Length == 0)
                 return auctionInfo;
             auctionInfo = bytes.Deserialize() as AuctionInfo;
@@ -1093,7 +1096,7 @@ namespace NNS_DEX_fixedPrice
                 //用户开始荷兰拍
                 if (method == "auction")
                 {
-                    return Auction((string[])args[1], (byte[])args[1], (BigInteger)args[2], (BigInteger)args[3]);
+                    return Auction((string[])args[0], (byte[])args[1], (BigInteger)args[2], (BigInteger)args[3], (BigInteger)args[4]);
                 }
                 //取消拍卖
                 if (method == "discontinueAuction")
