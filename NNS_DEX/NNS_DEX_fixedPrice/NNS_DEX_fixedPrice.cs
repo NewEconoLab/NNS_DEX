@@ -99,7 +99,7 @@ namespace NNS_DEX_fixedPrice
         public static event deleNNSauctionDiscontinued onAuctionDiscontinued;
 
         //通知 竞标  price为最终价格
-        public delegate void deleNNSbet(AuctionInfo auctionInfo,BigInteger price);
+        public delegate void deleNNSbet(AuctionInfo auctionInfo,byte[] buyer,BigInteger price);
         [DisplayName("NNSbet")]
         public static event deleNNSbet onBet;
 
@@ -281,23 +281,6 @@ namespace NNS_DEX_fixedPrice
             onLaunched(fixedSellingInfo);
         }
 
-        //用namehash获取一口价销售信息
-        private static fixedSellingInfo getfixedSellingInfoByFullhash(byte[] fullHash)
-        {
-            StorageMap fixedSellingInfoMap = Storage.CurrentContext.CreateMap("fixedSellingInfoMap");
-            var info = fixedSellingInfoMap.Get(fullHash);
-            if (info.Length > 0)
-                return info.Deserialize() as fixedSellingInfo;
-            else
-                return new fixedSellingInfo();
-        }
-
-        ////用NNS明文获取一口价销售信息
-        //public static fixedSellingInfo getfixedSellingInfoByDomainarray(string[] domainArray)
-        //{
-        //    return getfixedSellingInfoByFullhash(getFullNamehashForArray(domainArray));
-        //}
-
         private static bool checkSpuerAdmin()
         {
             byte[] superAdminAddr = getSysSetting("superAdminAddr");
@@ -378,155 +361,6 @@ namespace NNS_DEX_fixedPrice
             return assetSetting;
         }
 
-        //上架
-        public static object Launch(string[] domainArray,byte[] assetHash, BigInteger price)
-        {
-            //不允许的资产不能定价
-            assetSetting assetSetting = getAssetSetting(assetHash);
-            if (assetSetting.enable != 1)
-                return false;
-
-            //售价必须大于0
-            if (price <= 0) return false;
-
-            //合约限制最小价格为0.1,并且小数点后面不能超过一位（按照精度2换算），NNC为10
-            if (price < assetSetting.valueMin || price % assetSetting.valueUnit > 0)
-                return false;
-
-            byte[] fullhash = getFullNamehashForArray(domainArray);
-
-            //先获取这个域名的拥有者
-            OwnerInfo ownerInfo = GetOwnerInfo(fullhash);
-            //域名没有初始化不能上架
-            if (ownerInfo.owner.Length == 0)
-                return false;
-            var seller = ownerInfo.owner;
-            //没有域名所有权不能上架
-            if (!Runtime.CheckWitness(seller))
-                return false;
-            //域名已经到期了不能上架
-            if (!verifyExpires(ownerInfo.TTL))
-                return false;
-
-            //将域名抵押给本合约（域名所有权:卖家=>DEX合约）
-            deleDyncall centerCall = (deleDyncall)getSysSetting("domainCenterHash").ToDelegate();
-
-            var result = (byte[])centerCall("owner_SetOwner", new object[3] { seller, fullhash, ExecutionEngine.ExecutingScriptHash });
-            if (result.AsBigInteger() != 1)
-                return false;
-
-            //存储上架信息，并通知
-            saveFixedSellingInfo(domainArray , seller, assetHash, price);
-        
-            return true;
-        }
-
-        //下架
-        public static object Discontinue(byte[] fullHash)
-        {
-            StorageMap fixedSellingInfoMap = Storage.CurrentContext.CreateMap("fixedSellingInfoMap");
-            fixedSellingInfo FSI = getfixedSellingInfoByFullhash(fullHash);
-
-            //无出售信息不能下架
-            if (FSI.fullHash.Length == 0) return false;
-            //非出售者或超级管理员不可以下架
-            if (!Runtime.CheckWitness(FSI.seller) && !checkSpuerAdmin()) return false;
-
-            //var price = FSI.price;
-            //var seller = FSI.seller;
-            //if (FSI.price == 0)
-            //    return false;
-
-            //将域名所有权转回出售者（域名所有权:DEX合约=>卖家）
-            deleDyncall centerCall = (deleDyncall)getSysSetting("domainCenterHash").ToDelegate();
-
-            var result = (byte[])centerCall("owner_SetOwner", new object[3] { ExecutionEngine.ExecutingScriptHash, fullHash, FSI.seller });
-            if (result.AsBigInteger() != 1)
-                return false;
-            //清除出售信息
-            fixedSellingInfoMap.Delete(fullHash);
-            //通知
-            onDiscontinued(FSI);
-
-            return true;
-        }
-
-        public static object Buy(byte[] buyer, byte[] fullHash)
-        {
-            //只能用本人的钱购买
-            if (!Runtime.CheckWitness(buyer))
-                return false;
-
-            //先获取这个域名的信息
-            OwnerInfo ownerInfo = GetOwnerInfo(fullHash);
-            //域名没有初始化不能买
-            if (ownerInfo.owner.Length == 0)
-                return false;
-            //域名已经到期了不能购买
-            if (!verifyExpires(ownerInfo.TTL))
-                return false;          
-
-            //获取出售信息
-            fixedSellingInfo FSI = getfixedSellingInfoByFullhash(fullHash);
-            //无出售信息不能买
-            if (FSI.fullHash.Length == 0) return false;
-
-            var seller = FSI.seller;
-            //不允许自己买自己的NNS
-            if (seller.AsBigInteger() == buyer.AsBigInteger()) return false;
-
-            var assetHash = FSI.assetHash;
-            var price = FSI.price;          
-
-            StorageMap balanceMap = Storage.CurrentContext.CreateMap("balanceMap");
-            var balanceOfBuyer = balanceMap.Get(buyer.Concat(assetHash)).AsBigInteger();
-            
-            //钱不够不能买
-            if (balanceOfBuyer < price)
-                return false;
-
-            //进行域名的转让操作（域名所有权:DEX合约=>买家）
-            deleDyncall centerCall = (deleDyncall)getSysSetting("domainCenterHash").ToDelegate();
-
-            var result = (byte[])centerCall("owner_SetOwner", new object[3] { ExecutionEngine.ExecutingScriptHash, FSI.fullHash, buyer });
-            if (result.AsBigInteger() != 1) //如果域名所有权转移失败，返回失败
-                return false;
-            /*
-             * 域名转让成功 开始算钱
-             */
-            
-            var balanceOfSeller = balanceMap.Get(seller.Concat(assetHash)).AsBigInteger();
-
-            //给买方减少钱
-            if (balanceOfBuyer == price)//如果交易金额是全部余额，则清除账户
-                balanceMap.Delete(buyer.Concat(assetHash));
-            else
-                balanceMap.Put(buyer.Concat(assetHash), balanceOfBuyer - price);
-
-            //计算手续费
-            assetSetting assetSetting = getAssetSetting(assetHash);
-            BigInteger handlingFee = price * assetSetting.handlingFeeRate / fixedNumber;//handlingFeeRate是事先乘10000存储的
-
-            //给卖方增加钱(扣除手续费)
-            balanceMap.Put(seller, balanceOfSeller + price - handlingFee);
-
-            //发送手续费到分红池
-            if (handlingFee > 0)
-            {
-                if (!NEP5transfer(ExecutionEngine.ExecutingScriptHash, getSysSetting("dividingPoolAddr"), assetHash, handlingFee))
-                    throw new Exception("NEP5transfer is wrong");
-            }
-
-            //完成 把售卖信息删除
-            StorageMap fixedSellingInfoMap = Storage.CurrentContext.CreateMap("fixedSellingInfoMap");
-            fixedSellingInfoMap.Delete(fullHash);
-
-            //通知
-            onBuy(buyer, FSI);
-
-            return true;
-        }
-
         public static bool SetMoneyIn(byte[] txid, byte[] assetHash)
         {
             StorageMap txidVerifiedMap = Storage.CurrentContext.CreateMap("txidVerifiedMap");
@@ -560,11 +394,13 @@ namespace NNS_DEX_fixedPrice
             return false;
         }
 
-        public static bool TransferIn(byte[] from,BigInteger value,byte[] assetHash)
+        public static bool TransferIn(byte[] from, byte[] assetHash, BigInteger value)
         {
             //验证from的权限
             if (!Runtime.CheckWitness(from))
-                throw new Exception("param is wrong");
+                return false;
+            if (value < 0)
+                return false;
             //明确to是本合约
             byte[] to = ExecutionEngine.ExecutingScriptHash;
 
@@ -650,8 +486,23 @@ namespace NNS_DEX_fixedPrice
                 return false;
             if (price <= 0)
                 return false;
+
+            //不允许的资产不能定价
+            assetSetting assetSetting = getAssetSetting(assetHash);
+            if (assetSetting.enable != 1)
+                return false;
+            //价格必须大于0
+            if (price <= 0) return false;
+
+            //合约限制最小价格为0.1,并且小数点后面不能超过一位（按照精度2换算），NNC为10
+            if (price < assetSetting.valueMin || price % assetSetting.valueUnit > 0)
+                return false;
             //获取域名的fullhash
             byte[] fullHash = getFullNamehashForArray(domainArray);
+            //获取求购信息
+            OfferToBuyInfo offerToBuyInfo = GetOfferToBuyInfo(buyer, fullHash, assetHash);
+            if (offerToBuyInfo.fullHash.Length != 0)//已经有了这个资产的求购信息  同资产只能有一个求购
+                return false;
             //先获取这个域名的信息
             OwnerInfo ownerInfo = GetOwnerInfo(fullHash);
             //域名没有初始化或者已经到期了不能求购    ？？？？？？？先写着  再想想有没有必要限制
@@ -674,7 +525,7 @@ namespace NNS_DEX_fixedPrice
             balanceMap.Put(ExecutionEngine.ExecutingScriptHash.Concat(assetHash), balanceOfContract);
 
             //更新这个域名的求购信息
-            OfferToBuyInfo offerToBuyInfo = new OfferToBuyInfo { fullHash = fullHash , buyer = buyer, assetHash = assetHash, price = price,fullDomain= getFullStrForArray(domainArray)}; 
+            offerToBuyInfo = new OfferToBuyInfo { fullHash = fullHash , buyer = buyer, assetHash = assetHash, price = price,fullDomain= getFullStrForArray(domainArray)}; 
             PutOfferToBuyInfo(buyer,fullHash,assetHash, offerToBuyInfo);
             onOfferToBuy(offerToBuyInfo);
             return true;
@@ -690,7 +541,7 @@ namespace NNS_DEX_fixedPrice
         public static bool DiscontinueOfferToBuy(byte[] buyer, byte[] fullHash, byte[] assetHash)
         {
             //验证权限
-            if (!Runtime.CheckWitness(buyer))
+            if (!Runtime.CheckWitness(buyer) && !checkSpuerAdmin())
                 return false;
             //获取求购信息
             OfferToBuyInfo  offerToBuyInfo =  GetOfferToBuyInfo(buyer,fullHash,assetHash);
@@ -783,7 +634,7 @@ namespace NNS_DEX_fixedPrice
         {
             var key = fullHash.Concat(buyer).Concat(assetHash);
 
-            StorageMap offerToBuyInfoMap = Storage.CurrentContext.CreateMap("offerToBuyMap");
+            StorageMap offerToBuyInfoMap = Storage.CurrentContext.CreateMap("offerToBuyInfoMap");
             offerToBuyInfoMap.Put(key, map.Serialize());
             return true;
         }
@@ -793,11 +644,11 @@ namespace NNS_DEX_fixedPrice
         /// </summary>
         /// <param name="fullHash"></param>
         /// <returns></returns>
-        public static OfferToBuyInfo GetOfferToBuyInfo(byte[] buyer, byte[] fullHash, byte[] assetHash)
+        public static OfferToBuyInfo GetOfferToBuyInfo(byte[] fullHash, byte[] buyer,  byte[] assetHash)
         {
             var key = fullHash.Concat(buyer).Concat(assetHash);
 
-            StorageMap offerToBuyInfoMap = Storage.CurrentContext.CreateMap("offerToBuyMap");
+            StorageMap offerToBuyInfoMap = Storage.CurrentContext.CreateMap("offerToBuyInfoMap");
             byte[] bytes = offerToBuyInfoMap.Get(key);
             if (bytes.Length == 0)
                 return new OfferToBuyInfo() {  fullHash = new byte[] { } ,price = 0};
@@ -815,7 +666,7 @@ namespace NNS_DEX_fixedPrice
         {
             var key = fullHash.Concat(buyer).Concat(assetHash);
 
-            StorageMap offerToBuyInfoMap = Storage.CurrentContext.CreateMap("offerToBuyMap");
+            StorageMap offerToBuyInfoMap = Storage.CurrentContext.CreateMap("offerToBuyInfoMap");
             if (offerToBuyInfoMap.Get(key).Length == 0)
                 return false;
             offerToBuyInfoMap.Delete(key);
@@ -838,7 +689,7 @@ namespace NNS_DEX_fixedPrice
                 return false;
 
             //价格必须大于0
-            if (startPrice <= 0|| endPrice<=0|| endPrice>= startPrice) return false;
+            if (startPrice <= 0|| endPrice<=0|| endPrice > startPrice) return false;
 
             //合约限制最小价格为0.1,并且小数点后面不能超过一位（按照精度2换算），NNC为10
             if (startPrice < assetSetting.valueMin || startPrice % assetSetting.valueUnit > 0|| endPrice < assetSetting.valueMin || endPrice % assetSetting.valueUnit > 0)
@@ -898,18 +749,24 @@ namespace NNS_DEX_fixedPrice
         /// </summary>
         /// <param name="fullhash"></param>
         /// <returns></returns>
-        public static bool DiscontinueAuction(byte[] fullhash)
+        public static bool DiscontinueAuction(byte[] fullHash)
         {
             //获取域名的拍卖情况
             StorageMap auctionInfoMap = Storage.CurrentContext.CreateMap("auctionInfoMap");
-            var bytes = auctionInfoMap.Get(fullhash);
+            var bytes = auctionInfoMap.Get(fullHash);
             if (bytes.Length == 0)
                 return false;
             AuctionInfo auctionInfo = bytes.Deserialize() as AuctionInfo;
             //验证权限
-            if (!Runtime.CheckWitness(auctionInfo.auctioner))
+            if (!Runtime.CheckWitness(auctionInfo.auctioner)&& !checkSpuerAdmin())
                 return false;
-            auctionInfoMap.Delete(fullhash);
+            //将域名抵押给本合约（域名所有权:卖家=>DEX合约）
+            deleDyncall centerCall = (deleDyncall)getSysSetting("domainCenterHash").ToDelegate();
+
+            var result = (byte[])centerCall("owner_SetOwner", new object[3] { ExecutionEngine.ExecutingScriptHash, fullHash, auctionInfo.auctioner });
+            if (result.AsBigInteger() != 1)
+                return false;
+            auctionInfoMap.Delete(fullHash);
             onAuctionDiscontinued(auctionInfo);
             return true;
         }
@@ -969,7 +826,7 @@ namespace NNS_DEX_fixedPrice
 
             //给卖方增加钱(扣除手续费)
             var balanceOfAuctioner = balanceMap.Get(auctionInfo.auctioner.Concat(assetHash)).AsBigInteger();
-            balanceMap.Put(auctionInfo.auctioner, balanceOfAuctioner + price - handlingFee);
+            balanceMap.Put(auctionInfo.auctioner.Concat(assetHash), balanceOfAuctioner + price - handlingFee);
             //发送手续费到分红池
             if (handlingFee > 0)
             {
@@ -980,7 +837,7 @@ namespace NNS_DEX_fixedPrice
             //删除拍卖信息
             StorageMap auctionInfoMap = Storage.CurrentContext.CreateMap("auctionInfoMap");
             auctionInfoMap.Delete(fullHash);
-            onBet(auctionInfo, price);
+            onBet(auctionInfo, buyer ,price);
             return true;
         }
 
@@ -1031,10 +888,6 @@ namespace NNS_DEX_fixedPrice
                 {
                     return GetBalanceOf((byte[])args[0], (byte[])args[1]);
                 }
-                if (method == "getFixedSellingInfo")
-                {
-                    return getfixedSellingInfoByFullhash((byte[])args[0]);
-                }
                 if (method == "getOfferToBuyPrice")
                 {
                     var info = GetOfferToBuyInfo((byte[])args[0], (byte[])args[1], (byte[])args[2]);
@@ -1051,7 +904,7 @@ namespace NNS_DEX_fixedPrice
                 }
                 if (method == "transferIn")
                 {
-                    return TransferIn((byte[])args[0], (BigInteger)args[1], (byte[])args[2]);
+                    return TransferIn((byte[])args[0], (byte[])args[2], (BigInteger)args[1]);
                 }
                 //提现
                 if (method == "getMoneyBack")
@@ -1062,21 +915,6 @@ namespace NNS_DEX_fixedPrice
                 if (method == "getMoneyBackAll")
                 {
                     return GetMoneyBackAll((byte[])args[0], (byte[])args[1]);
-                }
-                //上架
-                if (method == "launch")
-                {
-                    return Launch((string[])args[0], (byte[])args[1], (BigInteger)args[1]);
-                }
-                //下架
-                if (method == "discontinue")
-                {
-                    return Discontinue((byte[])args[0]);
-                }
-                //购买
-                if (method == "buy")
-                {
-                    return Buy((byte[])args[0], (byte[])args[1]);
                 }
                 //求购
                 if (method == "offerToBuy")
