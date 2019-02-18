@@ -115,7 +115,7 @@ namespace NNS_DEX_fixedPrice
             public BigInteger valueMin;//最小使用量
             public BigInteger valueUnit;//最小使用单位（能被此整除）
             public BigInteger handlingFeeRate;//手续费比率*10000
-            public string transferMethod;//资产的转账方法
+            public string appTransferMethod;//资产的转账方法
         }
 
         public class OwnerInfo
@@ -256,7 +256,7 @@ namespace NNS_DEX_fixedPrice
 
             //动态调用执行转账
             deleDyncall dyncall = (deleDyncall)assetHash.ToDelegate();
-            bool result = (bool)dyncall(assetSetting.transferMethod, transInput);
+            bool result = (bool)dyncall(assetSetting.appTransferMethod, transInput);
 
             return result;
         }
@@ -336,7 +336,7 @@ namespace NNS_DEX_fixedPrice
             assetSetting.valueMin = valueMin;
             assetSetting.valueUnit = valueUnit;
             assetSetting.handlingFeeRate = handlingFeeRate;
-            assetSetting.transferMethod = transferMethod;
+            assetSetting.appTransferMethod = transferMethod;
 
             StorageMap assetSettingMap = Storage.CurrentContext.CreateMap("assetSettingMap");
             assetSettingMap.Put(assetHash, assetSetting.Serialize());
@@ -853,6 +853,25 @@ namespace NNS_DEX_fixedPrice
             return auctionInfo;
         }
 
+        public static BigInteger GetAuctionPrice(byte[] fullHash)
+        {
+            //获取域名的拍卖情况
+            AuctionInfo auctionInfo = GetAuctionInfo(fullHash);
+            if (auctionInfo.fullDomain == "")
+                return 0;
+            //获取当前的时间戳
+            var currentTimeStamp = Blockchain.GetHeader(Blockchain.GetHeight()).Timestamp;
+            //距离开始拍卖已经过了多久
+            var timeStamp = currentTimeStamp - auctionInfo.startTimeStamp;
+            //48小时一轮 开拍为0阶段  48小时后为1阶段 48*2小时后为2阶段    48*60*60=172800
+            var phase = timeStamp / 172800;
+            //计算当前的价格
+            var currentPrice = auctionInfo.startPrice - auctionInfo.salePrice * phase;
+            if (currentPrice < auctionInfo.endPrice)
+                currentPrice = auctionInfo.endPrice;
+            return currentPrice;
+        }
+
         public static object Main(string method, object[] args)
         {
             string magic = "20181031";
@@ -896,6 +915,10 @@ namespace NNS_DEX_fixedPrice
                 if (method == "getAuctionInfo")
                 {
                     return GetAuctionInfo((byte[])args[0]);
+                }
+                if (method == "getAuctionPrice")
+                {
+                    return GetAuctionPrice((byte[])args[0]);
                 }
                 //充值
                 if (method == "setMoneyIn")
@@ -946,6 +969,7 @@ namespace NNS_DEX_fixedPrice
                 {
                     return Bet((byte[])args[0],(byte[])args[1],(byte[])args[2],(BigInteger)args[3]);
                 }
+
             }
             return false;
         }
