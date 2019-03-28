@@ -524,7 +524,7 @@ namespace NNS_DEX_fixedPrice
             var balanceOfBuyer = balanceMap.Get(buyer.Concat(assetHash)).AsBigInteger();
             balanceOfBuyer = balanceOfBuyer - price;
             //扣钱 
-            if (balanceOfBuyer - price > 0)
+            if (balanceOfBuyer > 0)
                 balanceMap.Put(buyer.Concat(assetHash), balanceOfBuyer);
             else if (balanceOfBuyer == 0)
                 balanceMap.Delete(buyer.Concat(assetHash));
