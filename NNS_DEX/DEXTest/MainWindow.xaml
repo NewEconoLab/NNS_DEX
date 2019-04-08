@@ -43,7 +43,7 @@
                                 <RowDefinition Height="15*"/>
                             </Grid.RowDefinitions>
                             <Label Content="合约Hash" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Grid.Row="0" Grid.Column="0"/>
-                            <TextBox Name="tb_ContractHash" Text="0x4f865d63beeb9068feefe4e23822b40c84fdb405" Width="448" HorizontalAlignment="Left"  HorizontalContentAlignment="Left" VerticalContentAlignment="Center" Grid.Row="0" Grid.Column="1" Margin="0.4,0,0,0.4"/>
+                            <TextBox Name="tb_ContractHash" Text="0x024bb5722b218399be2cae270ef9c5f9642fde45" Width="448" HorizontalAlignment="Left"  HorizontalContentAlignment="Left" VerticalContentAlignment="Center" Grid.Row="0" Grid.Column="1" Margin="0.4,0,0,0.4"/>
                             <Button Content="更改" Click="UpdateScriptHash" Grid.Column="1" Grid.Row="0" Grid.ColumnSpan="2" Margin="448.4,0,0,0.4"/>
                             <Label Content="api" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Grid.Row="1" Grid.Column="0"/>
                             <TextBox Name="tb_api" Text="https://api.nel.group/api/testnet" HorizontalAlignment="Left" Width="500"  HorizontalContentAlignment="Left" VerticalContentAlignment="Center" Grid.Row="1" Grid.Column="1"/>
@@ -67,6 +67,7 @@
                                 <RowDefinition Height="15*"/>
                                 <RowDefinition Height="15*"/>
                                 <RowDefinition Height="15*"/>
+                                <RowDefinition Height="15*"/>
                             </Grid.RowDefinitions>
                             <Label Content="设置域名中心" Grid.Row="0" Grid.Column="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
                             <TextBox Name="tb_centerhash_key" Text="domainCenterHash" Grid.Row="0" Grid.Column="1"/>
@@ -76,7 +77,7 @@
                             <Label Content="设置最小押金" Grid.Row="1" Grid.Column="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
                             <TextBox Name="tb_minMortgagePayments_key" Text="minMortgagePayments" Grid.Row="1" Grid.Column="1"/>
                             <TextBox Name="tb_minMortgagePayments_value" Text="100" Grid.Row="1" Grid.Column="2"/>
-                            <Button Content="确定" Grid.Row="1" Grid.Column="3" Click="SetMinMortgagePayments"/>
+                            <Button Content="确定" Grid.Row="1" Grid.Column="2" Click="SetMinMortgagePayments" Grid.ColumnSpan="2" Height="29" Margin="285.4,0.2,0,0" Grid.RowSpan="2" VerticalAlignment="Top"/>
 
                             <Label Content="设置管理员" Grid.Row="2" Grid.Column="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
                             <TextBox Name="tb_superAdmin_key" Text="superAdminAddr" Grid.Row="2" Grid.Column="1"/>
@@ -92,6 +93,11 @@
                             <TextBox Name="tb_interval_key" Text="interval" Grid.Row="4" Grid.Column="1"/>
                             <TextBox Name="tb_interval_value" Text="86400" Grid.Row="4" Grid.Column="2"/>
                             <Button Content="确定" Grid.Row="4" Grid.Column="3" Click="SetInterval"/>
+
+                            <Label Content="设置抵押金的资产Hash" Grid.Row="5" Grid.Column="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+                            <TextBox Name="tb_mortgageAssetHash_key" Text="mortgageAssetHash" Grid.Row="5" Grid.Column="1"/>
+                            <TextBox Name="tb_mortgageAssetHash_value" Text="0xfc732edee1efdf968c23c20a9628eaa5a6ccb934" Grid.Row="5" Grid.Column="2"/>
+                            <Button Content="确定" Grid.Row="5" Grid.Column="2" Click="SetMortgageAssetHash" Grid.ColumnSpan="2" Margin="285.4,0.2,0,0.4"/>
                         </Grid>
                     </GroupBox>
 

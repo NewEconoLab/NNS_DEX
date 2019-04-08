@@ -794,7 +794,7 @@ namespace NNS_DEX_fixedPrice
             }
             else
             {
-                return false;
+                throw new Exception("no money");
             }
             onDexTransfer(auctioner,new byte[] { },mortgageAssetHash,mortgagePayments);
             //获取开始拍卖的时间戳
@@ -994,7 +994,7 @@ namespace NNS_DEX_fixedPrice
         }
         public static object Main(string method, object[] args)
         {
-            string magic = "20181031";
+            string magic = "20190408";
 
             //UTXO转账转入转出都不允许
             if (Runtime.Trigger == TriggerType.Verification || Runtime.Trigger == TriggerType.VerificationR)

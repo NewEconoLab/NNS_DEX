@@ -81,6 +81,20 @@ namespace DEX_SDK
             return GetScript(contractHash, inputJA);
         }
 
+        public byte[] GetScript_SetSysSetting_MortgageAssetHash(string key, Hash160 hash)
+        {
+            JArray inputJA = JArray.Parse(string.Format(@"
+                    [
+	                    '(str)setSysSetting',
+	                    [
+		                    '(str){0}',
+                            '(hex160){1}'
+	                    ]
+                    ]", key, hash));
+
+            return GetScript(contractHash, inputJA);
+        }
+
         public byte[] GetScript_GetSysSetting(string key)
         {
             JArray inputJA = JArray.Parse(string.Format(@"

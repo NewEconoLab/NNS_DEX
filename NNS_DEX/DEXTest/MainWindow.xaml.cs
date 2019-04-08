@@ -180,6 +180,13 @@ namespace DEXTest
             MakeTran(script);
         }
 
+        private void SetMortgageAssetHash(object sender, RoutedEventArgs e)
+        {
+            string key = this.tb_mortgageAssetHash_key.Text;
+            Hash160 value = new Hash160(this.tb_mortgageAssetHash_value.Text);
+            byte[] script = dex_ScriptPackage.GetScript_SetSysSetting_MortgageAssetHash(key, value);
+            MakeTran(script);
+        }
 
         private void QuerySystemSetting(object sender, RoutedEventArgs e)
         {
@@ -426,5 +433,6 @@ namespace DEXTest
             byte[] script = dex_ScriptPackage.GetScript_GetAuctionMoney(txid);
             MakeTran(script);
         }
+
     }
 }
