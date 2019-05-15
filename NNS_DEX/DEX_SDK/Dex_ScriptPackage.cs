@@ -314,19 +314,6 @@ namespace DEX_SDK
             return GetScript(contractHash, inputJA);
         }
 
-        public byte[] GetScript_GetSellMoney(Hash256 txid)
-        {
-            JArray inputJA = JArray.Parse(string.Format(@"
-                    [
-	                    '(str)getSellMoney',
-	                    [
-		                    '(hex256){0}'
-	                    ]
-                    ]", txid));
-
-            return GetScript(contractHash, inputJA);
-        }
-
         public byte[] GetScript_Auction(string[] domainArray, Hash160 assetid, BigInteger startPrice, BigInteger endPrice, BigInteger salePrice, BigInteger mortgagePayments)
         {
             JArray inputJA = JArray.Parse(string.Format(@"
@@ -370,19 +357,6 @@ namespace DEX_SDK
 		                    '(int){3}'
 	                    ]
                     ]", address, hash256, assetid, price));
-
-            return GetScript(contractHash, inputJA);
-        }
-
-        public byte[] GetScript_GetAuctionMoney(Hash256 txid)
-        {
-            JArray inputJA = JArray.Parse(string.Format(@"
-                    [
-	                    '(str)getAuctionMoney',
-	                    [
-		                    '(hex256){0}'
-	                    ]
-                    ]", txid));
 
             return GetScript(contractHash, inputJA);
         }

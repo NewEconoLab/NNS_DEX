@@ -33,11 +33,11 @@ namespace DEX_SDK
         public NelApiHelper nelApiHelper;
 
         public string Address { get; }
-        public byte[] PubKey {get; }
-        public byte[] PriKey {get; }
-        public byte[] SciptHash {get; }
+        public byte[] PubKey { get; }
+        public byte[] PriKey { get; }
+        public byte[] SciptHash { get; }
 
-        public Wallet(string wif,string nelApi)
+        public Wallet(string wif, string nelApi)
         {
             nelApiHelper = new NelApiHelper(nelApi);
             if (string.IsNullOrEmpty(wif))
@@ -48,7 +48,7 @@ namespace DEX_SDK
             SciptHash = ThinNeo.Helper_NEO.GetScriptHash_FromAddress(Address);
         }
 
-        public List<Utxo> GetUtxo(string addr,string assetid)
+        public List<Utxo> GetUtxo(string addr, string assetid)
         {
             JObject response = nelApiHelper.GetUTXO(addr);
             JArray resJA = (JArray)response["result"];
@@ -74,7 +74,7 @@ namespace DEX_SDK
                 return new List<Utxo>() { };
         }
 
-        public Transaction MakeTran(byte[] script,decimal netfee,bool sign = true)
+        public Transaction MakeTran(byte[] script, decimal systemfee, decimal netfee, bool sign = true)
         {
             Transaction tran = new ThinNeo.Transaction();
             tran.type = TransactionType.InvocationTransaction;
@@ -83,13 +83,18 @@ namespace DEX_SDK
             (tran.extdata as InvokeTransData).script = script;
             (tran.extdata as InvokeTransData).gas = 0;
             //没有系统费用就不用utxo模式的交易发放了
-            if (netfee <= 0)
+            if (netfee <= 0 && systemfee <= 0)
             {
-                MakeTran_NoNetfee(tran);
+                MakeTran_Nofee(tran);
             }
             else
             {
-                MakeTran_HasNetfee(tran, netfee);
+                MakeTran_Hasfee(tran, systemfee, netfee);
+            }
+            if (systemfee > 0)
+            {
+                tran.version = 1;
+                (tran.extdata as InvokeTransData).gas = systemfee;
             }
 
             if (sign)
@@ -98,7 +103,7 @@ namespace DEX_SDK
             return tran;
         }
 
-        private Transaction MakeTran_NoNetfee(Transaction tran)
+        private Transaction MakeTran_Nofee(Transaction tran)
         {
             tran.inputs = new ThinNeo.TransactionInput[0];
             tran.outputs = new ThinNeo.TransactionOutput[0];
@@ -111,15 +116,15 @@ namespace DEX_SDK
 
         private Transaction SignTran(Transaction tran)
         {
-            var signdata = ThinNeo.Helper_NEO.Sign(tran.GetMessage(),PriKey);
-            tran.AddWitness(signdata,PubKey,Address);
+            var signdata = ThinNeo.Helper_NEO.Sign(tran.GetMessage(), PriKey);
+            tran.AddWitness(signdata, PubKey, Address);
             return tran;
         }
 
-        private Transaction MakeTran_HasNetfee(Transaction tran,decimal netfee,decimal sendcount = 0)
+        private Transaction MakeTran_Hasfee(Transaction tran, decimal systemfee, decimal netfee)
         {
             string assetid = id_GAS;
-            List<Utxo> utxos=GetUtxo(Address, assetid);
+            List<Utxo> utxos = GetUtxo(Address, assetid);
             tran.attributes = new ThinNeo.Attribute[0];
             utxos.Sort((a, b) =>
             {
@@ -139,26 +144,26 @@ namespace DEX_SDK
                 input.index = (ushort)utxos[i].n;
                 list_inputs.Add(input);
                 count += utxos[i].value;
-                if (count >= sendcount+netfee)
+                if (count >= netfee + systemfee)
                 {
                     break;
                 }
             }
 
             tran.inputs = list_inputs.ToArray();
-            if (count >= sendcount)//输入大于等于输出
+            if (count >= netfee + systemfee)//输入大于等于输出
             {
                 List<ThinNeo.TransactionOutput> list_outputs = new List<ThinNeo.TransactionOutput>();
 
                 //找零
-                decimal change = count - sendcount - netfee;
+                decimal change = count - netfee - systemfee;
 
                 if (change > decimal.Zero)
                 {
                     ThinNeo.TransactionOutput outputchange = new ThinNeo.TransactionOutput();
                     outputchange.toAddress = SciptHash;
                     outputchange.value = change;
-                    outputchange.assetId = ThinNeo.Helper.HexString2Bytes(id_GAS);
+                    outputchange.assetId = new Hash256(id_GAS);
                     list_outputs.Add(outputchange);
                 }
                 tran.outputs = list_outputs.ToArray();

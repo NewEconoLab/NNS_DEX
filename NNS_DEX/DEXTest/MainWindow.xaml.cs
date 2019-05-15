@@ -99,7 +99,7 @@ namespace DEXTest
             }
             else
             {
-                Transaction tran = wallet.MakeTran(script, int.Parse(tb_netfee.Text));
+                Transaction tran = wallet.MakeTran(script, int.Parse(tb_systemfee.Text), int.Parse(tb_netfee.Text));
                 Console.WriteLine(Helper.Bytes2HexString(tran.GetRawData()));
                 JObject result = wallet.nelApiHelper.SendRawTransaction(Helper.Bytes2HexString(tran.GetRawData()));
                 //根据结果做出不同的操作
@@ -419,20 +419,5 @@ namespace DEXTest
             byte[] script = dex_ScriptPackage.GetScript_GetDividendBalance(assetid);
             Invoke(script);
         }
-
-        private void GetSellMoney(object sender, RoutedEventArgs e)
-        {
-            Hash256 txid = new Hash256(this.tb_sell_txid.Text);
-            byte[] script = dex_ScriptPackage.GetScript_GetSellMoney(txid);
-            MakeTran(script);
-        }
-
-        private void GetBetMoney(object sender, RoutedEventArgs e)
-        {
-            Hash256 txid = new Hash256(this.tb_bet_txid.Text);
-            byte[] script = dex_ScriptPackage.GetScript_GetAuctionMoney(txid);
-            MakeTran(script);
-        }
-
     }
 }

@@ -82,16 +82,6 @@ namespace NNS_DEX_fixedPrice
         public static event deleNNSbet onBet;
 
 
-        //通知 出售后 出售者算钱
-        public delegate void deleHandleSellMoney(SellInfo sellInfo, BigInteger state); //1是创建  0是销毁
-        [DisplayName("handleSellMoney")]
-        public static event deleHandleSellMoney onHandleSellMoney;
-
-        //通知 竞拍后 拍卖者算钱
-        public delegate void deleHandleBetMoney(BetInfo betInfo, BigInteger state); //1是创建  0是销毁
-        [DisplayName("handleBetMoney")]
-        public static event deleHandleBetMoney onHandleBetMoney;
-
         //存储区前缀
         //balanceMap key=addr+assetHash 地址合约内账户余额
         //fixedSellingInfoMap key=namehash  出售信息
@@ -168,7 +158,7 @@ namespace NNS_DEX_fixedPrice
             public BigInteger startPrice; //设置的起始价格
             public BigInteger endPrice; //最终价格
             public BigInteger salePrice;    //每轮降价的数额
-            public BigInteger mortgagePayments;
+            public BigInteger mortgagePayments; //抵押金
         }
 
         #region 域名转hash算法
@@ -619,49 +609,15 @@ namespace NNS_DEX_fixedPrice
             if (result.AsBigInteger() != 1) //如果域名所有权转移失败，返回失败
                 return false;
 
-            //如果成功了就记录下这个txid 以便后续算钱用
-            StorageMap sellInfoMap = Storage.CurrentContext.CreateMap("sellInfo");
-            var txid = (ExecutionEngine.ScriptContainer as Transaction).Hash;
-            SellInfo sellInfo = new SellInfo() {txid = txid, sellMoney = offerToBuyInfo.price ,seller = seller,assethash = assetHash};
-            sellInfoMap.Put(txid, sellInfo.Serialize());
-            onHandleSellMoney(sellInfo,1);
-            //把押金还给买家
-            var mortgageAssetHash = getSysSetting("mortgageAssetHash");
-            StorageMap balanceMap = Storage.CurrentContext.CreateMap("balanceMap");
-            var nncBalanceOfOffer = balanceMap.Get(buyer.Concat(mortgageAssetHash)).AsBigInteger();
-            nncBalanceOfOffer += offerToBuyInfo.mortgagePayments;
-            balanceMap.Put(buyer.Concat(mortgageAssetHash), nncBalanceOfOffer);
-            onDexTransfer(new byte[] { },buyer,mortgageAssetHash,offerToBuyInfo.mortgagePayments);
-            //删除此条求购信息
-            DeleteOfferToBuyInfo( buyer,fullHash,assetHash);
-            //通知
-            onSell(seller, offerToBuyInfo);
-            return true;
-        }
-
-        /// <summary>
-        /// 领取出售域名获得的钱，手续费也在这里结算
-        /// </summary>
-        /// <returns></returns>
-        public static bool GetSellMoney(byte[] txid)
-        {
-            //获取这个txid对应的sell信息
-            StorageMap sellInfoMap = Storage.CurrentContext.CreateMap("sellInfo");
-            byte[] bytes = sellInfoMap.Get(txid);
-            if (bytes.Length == 0)
-                return false;
-            SellInfo sellInfo = bytes.Deserialize() as SellInfo;
-            var seller = sellInfo.seller;
-            var assetHash = sellInfo.assethash;
-            var price = sellInfo.sellMoney;
+            //把钱转给卖家
             assetSetting assetSetting = getAssetSetting(assetHash);
-            BigInteger handlingFee = price * assetSetting.handlingFeeRate / fixedNumber;//handlingFeeRate是事先乘10000存储的
+            BigInteger handlingFee = offerToBuyInfo.price * assetSetting.handlingFeeRate / fixedNumber;//handlingFeeRate是事先乘10000存储的
             StorageMap balanceMap = Storage.CurrentContext.CreateMap("balanceMap");
             var balanceOfSeller = balanceMap.Get(seller.Concat(assetHash)).AsBigInteger();//卖家
-            balanceOfSeller = balanceOfSeller + price - handlingFee;
+            balanceOfSeller = balanceOfSeller + offerToBuyInfo.price - handlingFee;
             //给卖方增加钱(扣除手续费)
             balanceMap.Put(seller.Concat(assetHash), balanceOfSeller);
-            onDexTransfer(new byte[] { }, seller, assetHash, price - handlingFee);
+            onDexTransfer(new byte[] { }, seller, assetHash, offerToBuyInfo.price - handlingFee);
 
             //转移手续费
             //发送手续费到分红池
@@ -670,9 +626,17 @@ namespace NNS_DEX_fixedPrice
                 if (!NEP5transfer(ExecutionEngine.ExecutingScriptHash, getSysSetting("dividingPoolAddr"), assetHash, handlingFee))
                     throw new Exception("NEP5transfer is wrong");
             }
-            //删除这个txid
-            sellInfoMap.Delete(txid);
-            onHandleSellMoney(sellInfo, 0);
+
+            //把押金还给买家
+            var mortgageAssetHash = getSysSetting("mortgageAssetHash");
+            var nncBalanceOfOffer = balanceMap.Get(buyer.Concat(mortgageAssetHash)).AsBigInteger();
+            nncBalanceOfOffer += offerToBuyInfo.mortgagePayments;
+            balanceMap.Put(buyer.Concat(mortgageAssetHash), nncBalanceOfOffer);
+            onDexTransfer(new byte[] { },buyer,mortgageAssetHash,offerToBuyInfo.mortgagePayments);
+            //删除此条求购信息
+            DeleteOfferToBuyInfo( buyer,fullHash,assetHash);
+            //通知
+            onSell(seller, offerToBuyInfo);
             return true;
         }
 
@@ -881,7 +845,7 @@ namespace NNS_DEX_fixedPrice
             //获取降价的间隔
             var interval = getSysSetting("interval").AsBigInteger();
 
-            //48小时一轮 开拍为0阶段  48小时后为1阶段 48*2小时后为2阶段    48*60*60=172800
+            //X小时一轮 开拍为0阶段  X小时后为1阶段 X*2小时后为2阶段    X*60*60
             var phase = timeStamp / interval;
             //计算当前的价格
             var currentPrice = auctionInfo.startPrice - auctionInfo.salePrice* phase;
@@ -910,54 +874,33 @@ namespace NNS_DEX_fixedPrice
             else
                 balanceMap.Put(buyer.Concat(assetHash),balanceOfBuyer);
             onDexTransfer(buyer,new byte[] { },assetHash,price);
-            //存储信息  后续结算出售者的钱财
-            StorageMap betInfoMap = Storage.CurrentContext.CreateMap("betInfo");
-            var txid = (ExecutionEngine.ScriptContainer as Transaction).Hash;
-            BetInfo betInfo = new BetInfo() { txid = txid,assetHash = assetHash, auctioner = auctionInfo.auctioner, mortgagePayments = auctionInfo.mortgagePayments, price = price};
-            betInfoMap.Put(txid, betInfo.Serialize());
-            onHandleBetMoney(betInfo,1);
 
-            //删除拍卖信息
-            StorageMap auctionInfoMap = Storage.CurrentContext.CreateMap("auctionInfoMap");
-            auctionInfoMap.Delete(fullHash);
-            onBet(auctionInfo, buyer ,price);
-            return true;
-        }
-
-        public static bool GetAuctionMoney(byte[] txid)
-        {
-            StorageMap betInfoMap = Storage.CurrentContext.CreateMap("betInfo");
-            byte[] bytes =  betInfoMap.Get(txid);
-            if (bytes.Length == 0)
-                return false;
-            BetInfo betInfo = bytes.Deserialize() as BetInfo;
-
-            var assetHash = betInfo.assetHash;
-            var price = betInfo.price;
-            var auctioner = betInfo.auctioner;
-            var mortgagePayments = betInfo.mortgagePayments;
+            //转钱给拍卖者
             //计算手续费
             assetSetting assetSetting = getAssetSetting(assetHash);
             BigInteger handlingFee = price * assetSetting.handlingFeeRate / fixedNumber;//handlingFeeRate是事先乘10000存储的
-
-            StorageMap balanceMap = Storage.CurrentContext.CreateMap("balanceMap");
             //给卖方增加钱(扣除手续费)
+            var auctioner = auctionInfo.auctioner;
             var balanceOfAuctioner = balanceMap.Get(auctioner.Concat(assetHash)).AsBigInteger();
             balanceMap.Put(auctioner.Concat(assetHash), balanceOfAuctioner + price - handlingFee);
             onDexTransfer(new byte[] { }, auctioner, assetHash, price - handlingFee);
             //归还卖方的抵押金
             var mortgageAssetHash = getSysSetting("mortgageAssetHash");
             var nncBalanceOfAuctioner = balanceMap.Get(auctioner.Concat(mortgageAssetHash)).AsBigInteger();
-            balanceMap.Put(auctioner.Concat(mortgageAssetHash), nncBalanceOfAuctioner + mortgagePayments);
-            onDexTransfer(new byte[] { }, auctioner, mortgageAssetHash, mortgagePayments);
+            balanceMap.Put(auctioner.Concat(mortgageAssetHash), nncBalanceOfAuctioner + auctionInfo.mortgagePayments);
+            onDexTransfer(new byte[] { }, auctioner, mortgageAssetHash, auctionInfo.mortgagePayments);
 
             if (handlingFee > 0)
             {
                 if (!NEP5transfer(ExecutionEngine.ExecutingScriptHash, getSysSetting("dividingPoolAddr"), assetHash, handlingFee))
                     throw new Exception("NEP5transfer is wrong");
             }
-            betInfoMap.Delete(txid);
-            onHandleBetMoney(betInfo, 0);
+
+
+            //删除拍卖信息
+            StorageMap auctionInfoMap = Storage.CurrentContext.CreateMap("auctionInfoMap");
+            auctionInfoMap.Delete(fullHash);
+            onBet(auctionInfo, buyer ,price);
             return true;
         }
 
@@ -992,6 +935,7 @@ namespace NNS_DEX_fixedPrice
                 currentPrice = auctionInfo.endPrice;
             return currentPrice;
         }
+
         public static object Main(string method, object[] args)
         {
             string magic = "20190408";
@@ -1039,11 +983,6 @@ namespace NNS_DEX_fixedPrice
                 {
                     return Sell((byte[])args[0], (byte[])args[1], (byte[])args[2]);
                 }
-                //领取出售的钱
-                if (method == "getSellMoney")
-                {
-                    return GetSellMoney((byte[])args[0]);
-                }
                 //用户开始荷兰拍
                 if (method == "auction")
                 {
@@ -1058,11 +997,6 @@ namespace NNS_DEX_fixedPrice
                 if (method == "bet")
                 {
                     return Bet((byte[])args[0], (byte[])args[1], (byte[])args[2], (BigInteger)args[3]);
-                }
-                //领取拍卖的钱
-                if (method == "getAuctionMoney")
-                {
-                    return GetAuctionMoney((byte[])args[0]);
                 }
                 #region 合约设置方法
                 if (method == "setSysSetting")

@@ -29,7 +29,7 @@
         <TabControl HorizontalAlignment="Left" Height="699" VerticalAlignment="Top" Width="646" Margin="0,71,0,0">
             <TabItem Header="管理员操作">
                 <Grid Background="#FFE5E5E5">
-                    <GroupBox Header="默认参数" Margin="-1,10,0.8,533.2">
+                    <GroupBox Header="默认参数" Margin="-1,10,0.8,507.2">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="100*"/>
@@ -41,9 +41,10 @@
                                 <RowDefinition Height="15*"/>
                                 <RowDefinition Height="15*"/>
                                 <RowDefinition Height="15*"/>
+                                <RowDefinition Height="15*"/>
                             </Grid.RowDefinitions>
                             <Label Content="合约Hash" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Grid.Row="0" Grid.Column="0"/>
-                            <TextBox Name="tb_ContractHash" Text="0x024bb5722b218399be2cae270ef9c5f9642fde45" Width="448" HorizontalAlignment="Left"  HorizontalContentAlignment="Left" VerticalContentAlignment="Center" Grid.Row="0" Grid.Column="1" Margin="0.4,0,0,0.4"/>
+                            <TextBox Name="tb_ContractHash" Text="0x60995ae9d016e8e4595928e7196266db1f433be2" Width="448" HorizontalAlignment="Left"  HorizontalContentAlignment="Left" VerticalContentAlignment="Center" Grid.Row="0" Grid.Column="1" Margin="0.4,0,0,0.4"/>
                             <Button Content="更改" Click="UpdateScriptHash" Grid.Column="1" Grid.Row="0" Grid.ColumnSpan="2" Margin="448.4,0,0,0.4"/>
                             <Label Content="api" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Grid.Row="1" Grid.Column="0"/>
                             <TextBox Name="tb_api" Text="https://api.nel.group/api/testnet" HorizontalAlignment="Left" Width="500"  HorizontalContentAlignment="Left" VerticalContentAlignment="Center" Grid.Row="1" Grid.Column="1"/>
@@ -51,6 +52,8 @@
                             <CheckBox Name="multSign" Grid.Row="2" Grid.Column="1"/>
                             <Label Content="netfee" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Grid.Row="3" Grid.Column="0"/>
                             <TextBox Name="tb_netfee" Text="0" HorizontalAlignment="Left" Width="500"  HorizontalContentAlignment="Left" VerticalContentAlignment="Center" Grid.Row="3" Grid.Column="1"/>
+                            <Label Content="systemfee" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Grid.Row="4" Grid.Column="0"/>
+                            <TextBox Name="tb_systemfee" Text="10" HorizontalAlignment="Left" Width="500"  HorizontalContentAlignment="Left" VerticalContentAlignment="Center" Grid.Row="4" Grid.Column="1"/>
                         </Grid>
                     </GroupBox>
                     <GroupBox Header="设置系统参数" Margin="0,169,-0.2,305.2">
@@ -245,20 +248,6 @@
                             <Button Content="竞拍" Grid.Row="2" Grid.Column="1" Click="Bet" Grid.RowSpan="2" Margin="359.4,32.4,0,0.2"/>
                         </Grid>
                     </GroupBox>
-                    <GroupBox Header="领取竞拍的钱" Margin="0,396,-0.2,223.2">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="25*"/>
-                                <ColumnDefinition Width="5*"/>
-                            </Grid.ColumnDefinitions>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="10*"/>
-                            </Grid.RowDefinitions>
-                            <TextBox Name="tb_bet_txid" Text="" Grid.Column="0" Grid.Row="0"/>
-
-                            <Button Content="领取" Grid.Row="0" Grid.Column="1" Click="GetBetMoney"/>
-                        </Grid>
-                    </GroupBox>
                 </Grid>
             </TabItem>
             <TabItem Header="用户操作--卖家">
@@ -286,20 +275,6 @@
                             <TextBox Name="tb_sell_assetid" Text="0x74f2dc36a68fdc4682034178eb2220729231db76" Grid.Column="1" Grid.Row="2"/>
 
                             <Button Content="出售" Grid.Row="3" Grid.Column="1" Click="Sell" VerticalAlignment="Top" Height="30" Margin="92.4,0,244,0" />
-                        </Grid>
-                    </GroupBox>
-                    <GroupBox Header="领取出售的钱" Margin="0,146,-0.2,470.2">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="25*"/>
-                                <ColumnDefinition Width="5*"/>
-                            </Grid.ColumnDefinitions>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="10*"/>
-                            </Grid.RowDefinitions>
-                            <TextBox Name="tb_sell_txid" Text="" Grid.Column="0" Grid.Row="0"/>
-
-                            <Button Content="领取" Grid.Row="0" Grid.Column="1" Click="GetSellMoney"/>
                         </Grid>
                     </GroupBox>
                     <GroupBox Header="拍卖" Margin="0,305,-0.2,111.2">
