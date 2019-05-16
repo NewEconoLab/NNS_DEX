@@ -575,7 +575,7 @@ namespace NNS_DEX_fixedPrice
             var nncBalanceOfBuyer = balanceMap.Get(buyer.Concat(mortgageAssetHash)).AsBigInteger(); //求购者
             nncBalanceOfBuyer = nncBalanceOfBuyer + mortgagePayments;
             balanceMap.Put(buyer.Concat(mortgageAssetHash), nncBalanceOfBuyer);
-            onDexTransfer(new byte[] { }, buyer, assetHash, mortgagePayments);
+            onDexTransfer(new byte[] { }, buyer, mortgageAssetHash, mortgagePayments);
 
             onOfferToBuyDiscontinued(offerToBuyInfo);//通知
             return DeleteOfferToBuyInfo(buyer, fullHash, assetHash);
