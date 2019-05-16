@@ -44,7 +44,7 @@
                                 <RowDefinition Height="15*"/>
                             </Grid.RowDefinitions>
                             <Label Content="合约Hash" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Grid.Row="0" Grid.Column="0"/>
-                            <TextBox Name="tb_ContractHash" Text="0x60995ae9d016e8e4595928e7196266db1f433be2" Width="448" HorizontalAlignment="Left"  HorizontalContentAlignment="Left" VerticalContentAlignment="Center" Grid.Row="0" Grid.Column="1" Margin="0.4,0,0,0.4"/>
+                            <TextBox Name="tb_ContractHash" Text="0x38946e74b5ceb959027ad43b5d952260ff4dc6cc" Width="448" HorizontalAlignment="Left"  HorizontalContentAlignment="Left" VerticalContentAlignment="Center" Grid.Row="0" Grid.Column="1" Margin="0.4,0,0,0.4"/>
                             <Button Content="更改" Click="UpdateScriptHash" Grid.Column="1" Grid.Row="0" Grid.ColumnSpan="2" Margin="448.4,0,0,0.4"/>
                             <Label Content="api" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Grid.Row="1" Grid.Column="0"/>
                             <TextBox Name="tb_api" Text="https://api.nel.group/api/testnet" HorizontalAlignment="Left" Width="500"  HorizontalContentAlignment="Left" VerticalContentAlignment="Center" Grid.Row="1" Grid.Column="1"/>
