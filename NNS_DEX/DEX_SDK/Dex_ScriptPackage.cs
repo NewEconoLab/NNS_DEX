@@ -183,6 +183,32 @@ namespace DEX_SDK
             return GetScript(contractHash, inputJA);
         }
 
+        public byte[] GetScript_GetAuctionInfoByFullhash(Hash256 fullhash)
+        {
+            JArray inputJA = JArray.Parse(string.Format(@"
+                    [
+	                    '(str)getAuctionInfoByFullhash',
+	                    [
+		                    '(hex256){0}'
+	                    ]
+                    ]", fullhash));
+
+            return GetScript(contractHash, inputJA);
+        }
+
+        public byte[] GetScript_GetAuctionPriceByFullhash(Hash256 fullhash)
+        {
+            JArray inputJA = JArray.Parse(string.Format(@"
+                    [
+	                    '(str)getAuctionPriceByFullhash',
+	                    [
+		                    '(hex256){0}'
+	                    ]
+                    ]", fullhash));
+
+            return GetScript(contractHash, inputJA);
+        }
+
         public byte[] GetScript_GetAuctionInfo(Hash256 fullhash)
         {
             JArray inputJA = JArray.Parse(string.Format(@"
@@ -357,19 +383,6 @@ namespace DEX_SDK
 		                    '(int){3}'
 	                    ]
                     ]", address, hash256, assetid, price));
-
-            return GetScript(contractHash, inputJA);
-        }
-
-        public byte[] GetScript_GetDividendBalance(Hash160 assetid)
-        {
-            JArray inputJA = JArray.Parse(string.Format(@"
-                    [
-	                    '(str)getDividendBalance',
-	                    [
-		                    '(hex160){0}',
-	                    ]
-                    ]", assetid));
 
             return GetScript(contractHash, inputJA);
         }

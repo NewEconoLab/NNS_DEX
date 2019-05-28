@@ -44,7 +44,7 @@
                                 <RowDefinition Height="15*"/>
                             </Grid.RowDefinitions>
                             <Label Content="合约Hash" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Grid.Row="0" Grid.Column="0"/>
-                            <TextBox Name="tb_ContractHash" Text="0x38946e74b5ceb959027ad43b5d952260ff4dc6cc" Width="448" HorizontalAlignment="Left"  HorizontalContentAlignment="Left" VerticalContentAlignment="Center" Grid.Row="0" Grid.Column="1" Margin="0.4,0,0,0.4"/>
+                            <TextBox Name="tb_ContractHash" Text="0x52d4762d043204031cd9ef3e4a2153063c58dabe" Width="448" HorizontalAlignment="Left"  HorizontalContentAlignment="Left" VerticalContentAlignment="Center" Grid.Row="0" Grid.Column="1" Margin="0.4,0,0,0.4"/>
                             <Button Content="更改" Click="UpdateScriptHash" Grid.Column="1" Grid.Row="0" Grid.ColumnSpan="2" Margin="448.4,0,0,0.4"/>
                             <Label Content="api" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Grid.Row="1" Grid.Column="0"/>
                             <TextBox Name="tb_api" Text="https://api.nel.group/api/testnet" HorizontalAlignment="Left" Width="500"  HorizontalContentAlignment="Left" VerticalContentAlignment="Center" Grid.Row="1" Grid.Column="1"/>
@@ -234,8 +234,8 @@
                                 <RowDefinition Height="10*"/>
                                 <RowDefinition Height="10*"/>
                             </Grid.RowDefinitions>
-                            <Label Content="竞拍的域名" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Grid.Column="0" Grid.Row="0"/>
-                            <TextBox Name="tb_bet_domain" Text="" Grid.Column="1" Grid.Row="0"/>
+                            <Label Content="竞拍的场次(auctionid)" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Grid.Column="0" Grid.Row="0"/>
+                            <TextBox Name="tb_bet_auctionid" Text="" Grid.Column="1" Grid.Row="0"/>
 
                             <Label Content="资产id" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Grid.Column="0" Grid.Row="1"/>
                             <TextBox Name="tb_bet_assetid" Text="0x74f2dc36a68fdc4682034178eb2220729231db76" Grid.Column="1" Grid.Row="1"/>
@@ -277,7 +277,7 @@
                             <Button Content="出售" Grid.Row="3" Grid.Column="1" Click="Sell" VerticalAlignment="Top" Height="30" Margin="92.4,0,244,0" />
                         </Grid>
                     </GroupBox>
-                    <GroupBox Header="拍卖" Margin="0,305,-0.2,111.2">
+                    <GroupBox Header="拍卖" Margin="0,164,-0.2,265.2">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="5*"/>
@@ -312,21 +312,24 @@
 
                             <Button Content="开始拍卖" Grid.Row="5" Grid.Column="1" Click="Auction" Margin="0.4,32.4,368,0.4" Grid.RowSpan="2"/>
                             <Button Content="取消拍卖" Grid.Row="6" Grid.Column="1" Click="DiscontinueAuction" Margin="337.4,0.2,0,0.4" />
+                            <Button Content="最新场次信息" Grid.Row="6" Grid.Column="1" Click="GetAuctionInfoByFullhash" Margin="139.4,0,170,0.8" />
                         </Grid>
                     </GroupBox>
-                    <GroupBox Header="查询分红" Margin="0,565,-0.2,0.2">
+                    <GroupBox Header="byteArray2hexstring" Margin="0,411,-0.2,176.2">
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="5*"/>
                                 <ColumnDefinition Width="20*"/>
+                                <ColumnDefinition Width="5*"/>
+
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="10*"/>
                                 <RowDefinition Height="10*"/>
                             </Grid.RowDefinitions>
-                            <Label Content="资产id" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Grid.Column="0" Grid.Row="0"/>
-                            <TextBox Name="tb_dividendBalance_assetid" Text="0x74f2dc36a68fdc4682034178eb2220729231db76" Grid.Column="1" Grid.Row="0"/>
-                            <Button Content="查询" Grid.Row="1" Grid.Column="1" Click="GetDividendBalance" VerticalAlignment="Top" Height="36" Margin="110.4,0.2,259,0" />
+                            <TextBox Name="tb_byteArray" Text="" Grid.Column="0" Grid.Row="0"/>
+                            <TextBox IsReadOnly="True" Name="tb_hexString" Text="" Grid.Column="0" Grid.Row="1"/>
+                            <Button Content="转换" Grid.Row="0" Grid.Column="1" Click="change" />
+
                         </Grid>
                     </GroupBox>
                 </Grid>

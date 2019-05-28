@@ -345,30 +345,35 @@ namespace DEXTest
             MakeTran(script);
         }
 
+        private void GetAuctionInfoByFullhash(object sender, RoutedEventArgs e)
+        {
+            string[] domains = this.tb_auction_domain.Text.Split('.');
+            Hash256 fullHash = GetFullHash(domains);
+            byte[] script = dex_ScriptPackage.GetScript_GetAuctionInfoByFullhash(fullHash);
+            Invoke(script);
+        }
+
         private void GetAuctionInfo(object sender, RoutedEventArgs e)
         {
-            string[] domains = this.tb_bet_domain.Text.Split('.');
-            Hash256 fullHash = GetFullHash(domains);
-            byte[] script = dex_ScriptPackage.GetScript_GetAuctionInfo(fullHash);
+            Hash256 auctionid = new Hash256(this.tb_bet_auctionid.Text);
+            byte[] script = dex_ScriptPackage.GetScript_GetAuctionInfo(auctionid);
             Invoke(script);
         }
 
         private void GetAuctionPrice(object sender, RoutedEventArgs e)
         {
-            string[] domains = this.tb_bet_domain.Text.Split('.');
-            Hash256 fullHash = GetFullHash(domains);
-            byte[] script = dex_ScriptPackage.GetScript_GetAuctionPrice(fullHash);
+            Hash256 auctionid = new Hash256(this.tb_bet_auctionid.Text);
+            byte[] script = dex_ScriptPackage.GetScript_GetAuctionPrice(auctionid);
             Invoke(script);
         }
 
         private void Bet(object sender, RoutedEventArgs e)
         {
             string address = wallet.Address;
-            string[] domains = this.tb_bet_domain.Text.Split('.');
-            Hash256 fullHash = GetFullHash(domains);
+            Hash256 auctionid = new Hash256(this.tb_bet_auctionid.Text);
             Hash160 assetid = new Hash160(this.tb_bet_assetid.Text);
             BigInteger price = BigInteger.Parse(this.tb_bet_price.Text);
-            byte[] script = dex_ScriptPackage.GetScript_Bet(address,fullHash,assetid,price);
+            byte[] script = dex_ScriptPackage.GetScript_Bet(address, auctionid, assetid,price);
             MakeTran(script);
         }
 
@@ -407,17 +412,15 @@ namespace DEXTest
 
         private void DiscontinueAuction(object sender, RoutedEventArgs e)
         {
-            string[] domains = this.tb_auction_domain.Text.Split('.');
-            Hash256 fullhash = GetFullHash(domains);
-            byte[] script = dex_ScriptPackage.GetScript_DiscontinueAuction(fullhash);
+            Hash256 auctionid = new Hash256(this.tb_auction_domain.Text);
+            byte[] script = dex_ScriptPackage.GetScript_DiscontinueAuction(auctionid);
             MakeTran(script);
         }
 
-        private void GetDividendBalance(object sender, RoutedEventArgs e)
+        private void change(object sender, RoutedEventArgs e)
         {
-            Hash160 assetid = new Hash160(this.tb_dividendBalance_assetid.Text);
-            byte[] script = dex_ScriptPackage.GetScript_GetDividendBalance(assetid);
-            Invoke(script);
+            string byteArrayStr = this.tb_byteArray.Text;
+            this.tb_hexString.Text = new Hash256(ThinNeo.Helper.HexString2Bytes(byteArrayStr)).ToString();
         }
     }
 }
