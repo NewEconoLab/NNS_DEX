@@ -153,32 +153,28 @@ namespace DEX_SDK
             return GetScript(contractHash, inputJA);
         }
 
-        public byte[] GetScript_GetOfferToBuyPrice(string address,Hash256 fullhash, Hash160 assetid)
+        public byte[] GetScript_GetOfferToBuyPrice(Hash256 offerid)
         {
             JArray inputJA = JArray.Parse(string.Format(@"
                     [
 	                    '(str)getOfferToBuyPrice',
 	                    [
-		                    '(addr){0}',
-		                    '(hex256){1}',
-                            '(hex160){2}'
+		                    '(hex256){0}'
 	                    ]
-                    ]", address, fullhash, assetid));
+                    ]",offerid));
 
             return GetScript(contractHash, inputJA);
         }
 
-        public byte[] GetScript_GetOfferToBuyInfo(string address, Hash256 fullhash, Hash160 assetid)
+        public byte[] GetScript_GetOfferToBuyInfo(Hash256 offerid)
         {
             JArray inputJA = JArray.Parse(string.Format(@"
                     [
 	                    '(str)getOfferToBuyPrice',
 	                    [
-		                    '(addr){0}',
-		                    '(hex256){1}',
-                            '(hex160){2}'
+		                    '(hex256){0}'
 	                    ]
-                    ]", address, fullhash, assetid));
+                    ]", offerid));
 
             return GetScript(contractHash, inputJA);
         }
@@ -310,32 +306,28 @@ namespace DEX_SDK
             return GetScript(contractHash, inputJA);
         }
 
-        public byte[] GetScript_DiscontinueOfferToBuy(string address,Hash256 fullhash,Hash160 assetid)
+        public byte[] GetScript_DiscontinueOfferToBuy(Hash256 offerid)
         {
             JArray inputJA = JArray.Parse(string.Format(@"
                     [
 	                    '(str)discontinueOfferToBuy',
 	                    [
-		                    '(addr){0}',
-		                    '(hex256){1}',
-                            '(hex160){2}'
+		                    '(hex256){0}'
 	                    ]
-                    ]", address, fullhash, assetid));
+                    ]", offerid));
 
             return GetScript(contractHash, inputJA);
         }
 
-        public byte[] GetScript_Sell(string address, Hash256 fullhash, Hash160 assetid)
+        public byte[] GetScript_Sell(Hash256 offerid)
         {
             JArray inputJA = JArray.Parse(string.Format(@"
                     [
 	                    '(str)sell',
 	                    [
-		                    '(addr){0}',
-		                    '(hex256){1}',
-                            '(hex160){2}'
+		                    '(hex256){0}'
 	                    ]
-                    ]", address, fullhash, assetid));
+                    ]", offerid));
 
             return GetScript(contractHash, inputJA);
         }

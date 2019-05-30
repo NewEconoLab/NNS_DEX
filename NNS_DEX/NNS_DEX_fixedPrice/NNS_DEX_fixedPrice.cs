@@ -120,28 +120,10 @@ namespace NNS_DEX_fixedPrice
         //求购信息类
         public class OfferToBuyInfo
         {
+            public byte[] offerid;
             public byte[] fullHash;
             public string fullDomain;
             public byte[] buyer;
-            public byte[] assetHash;
-            public BigInteger price;
-            public BigInteger mortgagePayments;
-        }
-
-        //出售
-        public class SellInfo
-        {
-            public byte[] txid;
-            public byte[] seller;
-            public byte[] assethash;
-            public BigInteger sellMoney;
-        }
-
-        //竞拍
-        public class BetInfo
-        {
-            public byte[] txid;
-            public byte[] auctioner;
             public byte[] assetHash;
             public BigInteger price;
             public BigInteger mortgagePayments;
@@ -498,8 +480,10 @@ namespace NNS_DEX_fixedPrice
                 throw new InvalidOperationException("error");
             //获取域名的fullhash
             byte[] fullHash = NameHashArray(domainArray);
+            //获取这个交易的txid
+            byte[] offerid = (ExecutionEngine.ScriptContainer as Transaction).Hash;
             //获取求购信息
-            OfferToBuyInfo offerToBuyInfo = GetOfferToBuyInfo(buyer, fullHash, assetHash);
+            OfferToBuyInfo offerToBuyInfo = GetOfferToBuyInfo(offerid);
             if (offerToBuyInfo.fullHash.Length != 0)//已经有了这个资产的求购信息  同资产只能有一个求购
                 throw new InvalidOperationException("error");
             //先获取这个域名的信息
@@ -539,8 +523,8 @@ namespace NNS_DEX_fixedPrice
             onDexTransfer(buyer, new byte[] { }, mortgageAssetHash, MortgagePayments);
 
             //更新这个域名的求购信息
-            offerToBuyInfo = new OfferToBuyInfo { fullHash = fullHash , buyer = buyer, assetHash = assetHash, price = price,fullDomain= getFullStrForArray(domainArray),mortgagePayments = MortgagePayments}; 
-            PutOfferToBuyInfo(buyer,fullHash,assetHash, offerToBuyInfo);
+            offerToBuyInfo = new OfferToBuyInfo {offerid = offerid, fullHash = fullHash , buyer = buyer, assetHash = assetHash, price = price,fullDomain= getFullStrForArray(domainArray),mortgagePayments = MortgagePayments}; 
+            PutOfferToBuyInfo(offerid, offerToBuyInfo);
             onOfferToBuy(offerToBuyInfo);
             return true;
         }
@@ -552,14 +536,18 @@ namespace NNS_DEX_fixedPrice
         /// <param name="fullHash"></param>
         /// <param name="assetHash"></param>
         /// <returns></returns>
-        public static bool DiscontinueOfferToBuy(byte[] buyer, byte[] fullHash, byte[] assetHash)
+        public static bool DiscontinueOfferToBuy(byte[] offerid)
         {
+
+            //获取求购信息
+            OfferToBuyInfo  offerToBuyInfo =  GetOfferToBuyInfo(offerid);
+            if (offerToBuyInfo.fullHash.Length == 0)//没求购过别浪费时间了
+                throw new InvalidOperationException("error");
+            var buyer = offerToBuyInfo.buyer;
+            var assetHash = offerToBuyInfo.assetHash;
+            var fullHash = offerToBuyInfo.fullHash;
             //验证权限
             if (!Runtime.CheckWitness(buyer) && !checkSpuerAdmin())
-                throw new InvalidOperationException("error");
-            //获取求购信息
-            OfferToBuyInfo  offerToBuyInfo =  GetOfferToBuyInfo(buyer,fullHash,assetHash);
-            if (offerToBuyInfo.fullHash.Length == 0)//没求购过别浪费时间了
                 throw new InvalidOperationException("error");
             //把钱退给求购者
             var price = offerToBuyInfo.price;
@@ -579,7 +567,7 @@ namespace NNS_DEX_fixedPrice
             onDexTransfer(new byte[] { }, buyer, mortgageAssetHash, mortgagePayments);
 
             onOfferToBuyDiscontinued(offerToBuyInfo);//通知
-            return DeleteOfferToBuyInfo(buyer, fullHash, assetHash);
+            return DeleteOfferToBuyInfo(offerid);
         }
 
         /// <summary>
@@ -589,8 +577,15 @@ namespace NNS_DEX_fixedPrice
         /// <param name="fullHash"></param>
         /// <param name="assetHash"></param>
         /// <returns></returns>
-        public static bool Sell( byte[] buyer, byte[] fullHash, byte[] assetHash)
+        public static bool Sell(byte[] offerid)
         {
+            //获取求购信息
+            OfferToBuyInfo offerToBuyInfo = GetOfferToBuyInfo(offerid);
+            if (offerToBuyInfo.fullHash.Length == 0)//没求购过别浪费时间了
+                throw new InvalidOperationException("error");
+            var fullHash = offerToBuyInfo.fullHash;
+            var buyer = offerToBuyInfo.buyer;
+            var assetHash = offerToBuyInfo.assetHash;
             //先获取这个域名的信息
             OwnerInfo ownerInfo = GetOwnerInfo(fullHash);
             if (ownerInfo.owner.Length == 0 || !verifyExpires(ownerInfo.TTL))//验证域名是否有效
@@ -598,10 +593,6 @@ namespace NNS_DEX_fixedPrice
             //验证权限
             var seller = ownerInfo.owner;
             if (!Runtime.CheckWitness(seller))
-                throw new InvalidOperationException("error");
-            //获取求购信息
-            OfferToBuyInfo offerToBuyInfo = GetOfferToBuyInfo(buyer, fullHash,assetHash);
-            if (offerToBuyInfo.fullHash.Length == 0)//没求购过别浪费时间了
                 throw new InvalidOperationException("error");
             //进行域名的转让操作（域名所有权:卖家=>买家）
             deleDyncall centerCall = (deleDyncall)getSysSetting("domainCenterHash").ToDelegate();
@@ -635,7 +626,7 @@ namespace NNS_DEX_fixedPrice
             balanceMap.Put(buyer.Concat(mortgageAssetHash), nncBalanceOfOffer);
             onDexTransfer(new byte[] { },buyer,mortgageAssetHash,offerToBuyInfo.mortgagePayments);
             //删除此条求购信息
-            DeleteOfferToBuyInfo( buyer,fullHash,assetHash);
+            DeleteOfferToBuyInfo( offerid);
             //通知
             onSell(seller, offerToBuyInfo);
             return true;
@@ -647,12 +638,10 @@ namespace NNS_DEX_fixedPrice
         /// <param name="fullHash"></param>
         /// <param name="map"></param>
         /// <returns></returns>
-        public static bool PutOfferToBuyInfo(byte[] buyer, byte[] fullHash, byte[] assetHash, OfferToBuyInfo map)
+        public static bool PutOfferToBuyInfo(byte[] offerid, OfferToBuyInfo map)
         {
-            var key = fullHash.Concat(buyer).Concat(assetHash);
-
             StorageMap offerToBuyInfoMap = Storage.CurrentContext.CreateMap("offerToBuyInfoMap");
-            offerToBuyInfoMap.Put(key, map.Serialize());
+            offerToBuyInfoMap.Put(offerid, map.Serialize());
             return true;
         }
 
@@ -661,14 +650,12 @@ namespace NNS_DEX_fixedPrice
         /// </summary>
         /// <param name="fullHash"></param>
         /// <returns></returns>
-        public static OfferToBuyInfo GetOfferToBuyInfo(byte[] buyer, byte[] fullHash,  byte[] assetHash)
+        public static OfferToBuyInfo GetOfferToBuyInfo(byte[] offerid)
         {
-            var key = fullHash.Concat(buyer).Concat(assetHash);
-
             StorageMap offerToBuyInfoMap = Storage.CurrentContext.CreateMap("offerToBuyInfoMap");
-            byte[] bytes = offerToBuyInfoMap.Get(key);
+            byte[] bytes = offerToBuyInfoMap.Get(offerid);
             if (bytes.Length == 0)
-                return new OfferToBuyInfo() {  fullHash = new byte[] { } ,price = 0};
+                return new OfferToBuyInfo() {offerid=new byte[] { },  fullHash = new byte[] { } ,price = 0};
             return bytes.Deserialize() as OfferToBuyInfo;
         }
 
@@ -679,14 +666,12 @@ namespace NNS_DEX_fixedPrice
         /// <param name="fullHash"></param>
         /// <param name="assetHash"></param>
         /// <returns></returns>
-        public static bool DeleteOfferToBuyInfo(byte[] buyer, byte[] fullHash, byte[] assetHash)
+        public static bool DeleteOfferToBuyInfo(byte[] offerid)
         {
-            var key = fullHash.Concat(buyer).Concat(assetHash);
-
             StorageMap offerToBuyInfoMap = Storage.CurrentContext.CreateMap("offerToBuyInfoMap");
-            if (offerToBuyInfoMap.Get(key).Length == 0)
+            if (offerToBuyInfoMap.Get(offerid).Length == 0)
                 throw new InvalidOperationException("error");
-            offerToBuyInfoMap.Delete(key);
+            offerToBuyInfoMap.Delete(offerid);
             return true;
         }
 
@@ -778,6 +763,9 @@ namespace NNS_DEX_fixedPrice
                 mortgagePayments = mortgagePayments,
             };
             StorageMap auctionInfoMap = Storage.CurrentContext.CreateMap("auctionInfoMap");
+            //如果已经存在这个id报错
+            if (auctionInfoMap.Get(auctionid).Length != 0)
+                throw new Exception("error");
             auctionInfoMap.Put(auctionid, auctionInfo.Serialize());
             //记录当前这个域名正在拍卖的场次是什么
             StorageMap auctionInfoCurrentMap = Storage.CurrentContext.CreateMap("auctionInfoCurrentMap");
@@ -995,12 +983,12 @@ namespace NNS_DEX_fixedPrice
                 //取消求购
                 if (method == "discontinueOfferToBuy")
                 {
-                    return DiscontinueOfferToBuy((byte[])args[0], (byte[])args[1], (byte[])args[2]);
+                    return DiscontinueOfferToBuy((byte[])args[0]);
                 }
                 //出售给求购者
                 if (method == "sell")
                 {
-                    return Sell((byte[])args[0], (byte[])args[1], (byte[])args[2]);
+                    return Sell((byte[])args[0]);
                 }
                 //用户开始荷兰拍
                 if (method == "auction")
@@ -1042,12 +1030,12 @@ namespace NNS_DEX_fixedPrice
                 }
                 if (method == "getOfferToBuyerInfo")
                 {
-                    var info = GetOfferToBuyInfo((byte[])args[0], (byte[])args[1], (byte[])args[2]);
+                    var info = GetOfferToBuyInfo((byte[])args[0]);
                     return info;
                 }
                 if (method == "getOfferToBuyPrice")
                 {
-                    var info = GetOfferToBuyInfo((byte[])args[0], (byte[])args[1], (byte[])args[2]);
+                    var info = GetOfferToBuyInfo((byte[])args[0]);
                     return info.price;
                 }
                 if (method == "getAuctionInfo")

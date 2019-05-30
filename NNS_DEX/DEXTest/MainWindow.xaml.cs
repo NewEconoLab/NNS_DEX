@@ -313,12 +313,9 @@ namespace DEXTest
 
         private void GetOfferToBuyerInfo(object sender, RoutedEventArgs e)
         {
-            string address = wallet.Address;
-            Hash160 assetid = new Hash160(this.tb_offerToBuyer_assetid.Text);
-            string[] domains = this.tb_offerToBuyer_domain.Text.Split('.');
-            Hash256 fullHash = GetFullHash(domains);
+            Hash256 offerid = new Hash256(this.tb_offerToBuyer_offerid.Text);
 
-            byte[] script = dex_ScriptPackage.GetScript_GetOfferToBuyInfo(address, fullHash, assetid);
+            byte[] script = dex_ScriptPackage.GetScript_GetOfferToBuyInfo(offerid);
             Invoke(script);
         }
 
@@ -335,12 +332,9 @@ namespace DEXTest
 
         private void DiscontinueOfferToBuy(object sender, RoutedEventArgs e)
         {
-            string address = wallet.Address;
-            Hash160 assetid = new Hash160(this.tb_offerToBuyer_assetid.Text);
-            string[] domains = this.tb_offerToBuyer_domain.Text.Split('.');
-            Hash256 fullHash = GetFullHash(domains);
+            Hash256 offerid = new Hash256(this.tb_offerToBuyer_offerid.Text);
 
-            byte[] script = dex_ScriptPackage.GetScript_DiscontinueOfferToBuy(address,fullHash,assetid);
+            byte[] script = dex_ScriptPackage.GetScript_DiscontinueOfferToBuy(offerid);
 
             MakeTran(script);
         }
@@ -379,22 +373,16 @@ namespace DEXTest
 
         private void GetOfferToBuyerPrice(object sender, RoutedEventArgs e)
         {
-            string address = wallet.Address;
-            Hash160 assetid = new Hash160(this.tb_sell_assetid.Text);
-            string[] domains = this.tb_sell_domain.Text.Split('.');
-            Hash256 fullHash = GetFullHash(domains);
+            Hash256 offerid = new Hash256(this.tb_offerToBuyer_offerid.Text);
 
-            byte[] script = dex_ScriptPackage.GetScript_GetOfferToBuyPrice(address, fullHash, assetid);
+            byte[] script = dex_ScriptPackage.GetScript_GetOfferToBuyPrice(offerid);
             Invoke(script);
         }
 
         private void Sell(object sender, RoutedEventArgs e)
         {
-            string address = this.tb_sell_address.Text;
-            string[] domains = this.tb_sell_domain.Text.Split('.');
-            Hash256 fullhash = GetFullHash(domains);
-            Hash160 assetid = new Hash160(this.tb_sell_assetid.Text);
-            byte[] script = dex_ScriptPackage.GetScript_Sell(address,fullhash,assetid);
+            Hash256 fullhash = new Hash256(this.tb_sell_offerid.Text);
+            byte[] script = dex_ScriptPackage.GetScript_Sell(fullhash);
             MakeTran(script);
         }
 
@@ -412,7 +400,7 @@ namespace DEXTest
 
         private void DiscontinueAuction(object sender, RoutedEventArgs e)
         {
-            Hash256 auctionid = new Hash256(this.tb_auction_domain.Text);
+            Hash256 auctionid = new Hash256(this.tb_auction_auctionid.Text);
             byte[] script = dex_ScriptPackage.GetScript_DiscontinueAuction(auctionid);
             MakeTran(script);
         }

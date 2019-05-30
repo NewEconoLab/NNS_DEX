@@ -44,7 +44,7 @@
                                 <RowDefinition Height="15*"/>
                             </Grid.RowDefinitions>
                             <Label Content="合约Hash" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Grid.Row="0" Grid.Column="0"/>
-                            <TextBox Name="tb_ContractHash" Text="0x52d4762d043204031cd9ef3e4a2153063c58dabe" Width="448" HorizontalAlignment="Left"  HorizontalContentAlignment="Left" VerticalContentAlignment="Center" Grid.Row="0" Grid.Column="1" Margin="0.4,0,0,0.4"/>
+                            <TextBox Name="tb_ContractHash" Text="0xafc0a0954e343b705e9e4360c99f3ce2351581f4" Width="448" HorizontalAlignment="Left"  HorizontalContentAlignment="Left" VerticalContentAlignment="Center" Grid.Row="0" Grid.Column="1" Margin="0.4,0,0,0.4"/>
                             <Button Content="更改" Click="UpdateScriptHash" Grid.Column="1" Grid.Row="0" Grid.ColumnSpan="2" Margin="448.4,0,0,0.4"/>
                             <Label Content="api" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Grid.Row="1" Grid.Column="0"/>
                             <TextBox Name="tb_api" Text="https://api.nel.group/api/testnet" HorizontalAlignment="Left" Width="500"  HorizontalContentAlignment="Left" VerticalContentAlignment="Center" Grid.Row="1" Grid.Column="1"/>
@@ -192,13 +192,14 @@
                             <Button Content="balanceOf" Grid.Row="1" Grid.Column="6" Click="BalanceOfNNC"/>
                         </Grid>
                     </GroupBox>
-                    <GroupBox Header="求购" Margin="0,82,-0.2,439.2" >
+                    <GroupBox Header="求购" Margin="0,82,-0.2,397.2" >
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="5*"/>
                                 <ColumnDefinition Width="20*"/>
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
+                                <RowDefinition Height="10*"/>
                                 <RowDefinition Height="10*"/>
                                 <RowDefinition Height="10*"/>
                                 <RowDefinition Height="10*"/>
@@ -217,12 +218,15 @@
                             <Label Content="抵押的nnc数量" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Grid.Column="0" Grid.Row="3"/>
                             <TextBox Name="tb_offerToBuyer_mortgage" Text="100" Grid.Column="1" Grid.Row="3"/>
 
-                            <Button Content="查询" Grid.Row="4" Grid.Column="0" Click="GetOfferToBuyerInfo" />
-                            <Button Content="求购" Grid.Row="3" Grid.Column="1" Click="OfferToBuyer" Grid.RowSpan="2" Margin="95.4,25.2,275,0" />
-                            <Button Content="取消求购" Grid.Row="3" Grid.Column="1" Click="DiscontinueOfferToBuy" Grid.RowSpan="2" Margin="364.4,25.2,0,0" />
+                            <Label Content="offerid(查询取消专用)" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Grid.Column="0" Grid.Row="4"/>
+                            <TextBox Name="tb_offerToBuyer_offerid" Text="" Grid.Column="1" Grid.Row="4"/>
+                            
+                            <Button Content="查询" Grid.Row="5" Grid.Column="0" Click="GetOfferToBuyerInfo" Grid.ColumnSpan="2" Margin="0,0.4,502,-0.4" />
+                            <Button Content="求购" Grid.Row="5" Grid.Column="1" Click="OfferToBuyer" Margin="95.4,0.4,275,-0.4" />
+                            <Button Content="取消求购" Grid.Row="5" Grid.Column="1" Click="DiscontinueOfferToBuy" Margin="364.4,0.4,0,-0.4" />
                         </Grid>
                     </GroupBox>
-                    <GroupBox Header="竞拍" Margin="0,237,-0.2,280.2">
+                    <GroupBox Header="竞拍" Margin="0,274,-0.2,230.2">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="5*"/>
@@ -252,7 +256,7 @@
             </TabItem>
             <TabItem Header="用户操作--卖家">
                 <Grid>
-                    <GroupBox Header="出售给求购者" Margin="0,0,-0.2,530.2">
+                    <GroupBox Header="出售给求购者" Margin="0,0,-0.2,589.2">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="5*"/>
@@ -261,20 +265,12 @@
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="10*"/>
                                 <RowDefinition Height="10*"/>
-                                <RowDefinition Height="10*"/>
-                                <RowDefinition Height="10*"/>
                             </Grid.RowDefinitions>
 
-                            <Label Content="出售给哪个地址" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Grid.Column="0" Grid.Row="0"/>
-                            <TextBox Name="tb_sell_address" Text="" Grid.Column="1" Grid.Row="0"/>
+                            <Label Content="offerid" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Grid.Column="0" Grid.Row="0"/>
+                            <TextBox Name="tb_sell_offerid" Text="" Grid.Column="1" Grid.Row="0"/>
 
-                            <Label Content="出售的域名" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Grid.Column="0" Grid.Row="1"/>
-                            <TextBox Name="tb_sell_domain" Text="" Grid.Column="1" Grid.Row="1"/>
-
-                            <Label Content="资产id" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Grid.Column="0" Grid.Row="2"/>
-                            <TextBox Name="tb_sell_assetid" Text="0x74f2dc36a68fdc4682034178eb2220729231db76" Grid.Column="1" Grid.Row="2"/>
-
-                            <Button Content="出售" Grid.Row="3" Grid.Column="1" Click="Sell" VerticalAlignment="Top" Height="30" Margin="92.4,0,244,0" />
+                            <Button Content="出售" Grid.Row="1" Grid.Column="1" Click="Sell" VerticalAlignment="Top" Height="30" Margin="92.4,0,244,0" />
                         </Grid>
                     </GroupBox>
                     <GroupBox Header="拍卖" Margin="0,164,-0.2,265.2">
@@ -284,6 +280,7 @@
                                 <ColumnDefinition Width="20*"/>
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
+                                <RowDefinition Height="10*"/>
                                 <RowDefinition Height="10*"/>
                                 <RowDefinition Height="10*"/>
                                 <RowDefinition Height="10*"/>
@@ -313,6 +310,9 @@
                             <Button Content="开始拍卖" Grid.Row="5" Grid.Column="1" Click="Auction" Margin="0.4,32.4,368,0.4" Grid.RowSpan="2"/>
                             <Button Content="取消拍卖" Grid.Row="6" Grid.Column="1" Click="DiscontinueAuction" Margin="337.4,0.2,0,0.4" />
                             <Button Content="最新场次信息" Grid.Row="6" Grid.Column="1" Click="GetAuctionInfoByFullhash" Margin="139.4,0,170,0.8" />
+
+                            <Label Content="auctionid" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Grid.Column="0" Grid.Row="7"/>
+                            <TextBox Name="tb_auction_auctionid" Text="" Grid.Column="1" Grid.Row="7"/>
                         </Grid>
                     </GroupBox>
                     <GroupBox Header="byteArray2hexstring" Margin="0,411,-0.2,176.2">
